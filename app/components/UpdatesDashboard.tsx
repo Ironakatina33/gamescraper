@@ -10,125 +10,151 @@ type GameUpdate = {
   slug: string;
   source: string;
   article_url: string;
-  image_url?: string | null;
   summary?: string | null;
   published_at?: string | null;
 };
 
-type Props = {
+type UpdatesDashboardProps = {
   updates: GameUpdate[];
 };
 
-export default function UpdatesDashboard({ updates }: Props) {
-  const [query, setQuery] = useState('');
+function getSavedWatchlist(): string[] {
+  try {
+    const raw = localStorage.getItem('watchlist-games');
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveWatchlist(slugs: string[]) {
+  localStorage.setItem('watchlist-games', JSON.stringify(slugs));
+}
+
+function formatDate(value?: string | null) {
+  if (!value) return 'Date inconnue';
+  return new Date(value).toLocaleString();
+}
+
+export default function UpdatesDashboard({ updates }: UpdatesDashboardProps) {
+  const [search, setSearch] = useState('');
+  const [selectedSource, setSelectedSource] = useState('all');
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [sourceFilter, setSourceFilter] = useState('all');
 
   useEffect(() => {
-    const saved = localStorage.getItem('watchlist-games');
-    if (saved) {
-      try {
-        setWatchlist(JSON.parse(saved));
-      } catch {
-        setWatchlist([]);
-      }
-    }
+    setWatchlist(getSavedWatchlist());
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('watchlist-games', JSON.stringify(watchlist));
+    saveWatchlist(watchlist);
   }, [watchlist]);
 
   const sources = useMemo(() => {
     return Array.from(new Set(updates.map((item) => item.source))).sort();
   }, [updates]);
 
-  const normalizedQuery = query.trim().toLowerCase();
+  const filteredUpdates = useMemo(() => {
+    const searchValue = search.trim().toLowerCase();
 
-  const filtered = useMemo(() => {
     return updates.filter((item) => {
-      const matchesQuery =
-        !normalizedQuery ||
-        item.title?.toLowerCase().includes(normalizedQuery) ||
-        item.slug?.toLowerCase().includes(normalizedQuery) ||
-        item.summary?.toLowerCase().includes(normalizedQuery) ||
-        item.source?.toLowerCase().includes(normalizedQuery);
+      const matchesSearch =
+        !searchValue ||
+        item.title.toLowerCase().includes(searchValue) ||
+        item.slug.toLowerCase().includes(searchValue) ||
+        (item.summary ?? '').toLowerCase().includes(searchValue) ||
+        item.source.toLowerCase().includes(searchValue);
 
       const matchesSource =
-        sourceFilter === 'all' || item.source === sourceFilter;
+        selectedSource === 'all' || item.source === selectedSource;
 
-      return matchesQuery && matchesSource;
+      return matchesSearch && matchesSource;
     });
-  }, [updates, normalizedQuery, sourceFilter]);
+  }, [updates, search, selectedSource]);
 
   const suggestions = useMemo(() => {
-    if (!normalizedQuery) return [];
+    const searchValue = search.trim().toLowerCase();
+    if (!searchValue) return [];
 
-    const uniqueTitles = Array.from(
-      new Map(
-        updates.map((item) => [
-          item.slug,
-          {
-            slug: item.slug,
-            title: item.title,
-          },
-        ])
-      ).values()
+    const uniqueGames = Array.from(
+      new Map(updates.map((item) => [item.slug, item])).values()
     );
 
-    return uniqueTitles
-      .filter((item) => item.title.toLowerCase().includes(normalizedQuery))
-      .slice(0, 6);
-  }, [updates, normalizedQuery]);
+    return uniqueGames
+      .filter((item) => item.title.toLowerCase().includes(searchValue))
+      .slice(0, 5);
+  }, [updates, search]);
+
+  function isInWatchlist(slug: string) {
+    return watchlist.includes(slug);
+  }
 
   function toggleWatchlist(slug: string) {
-    setWatchlist((prev) =>
-      prev.includes(slug) ? prev.filter((item) => item !== slug) : [...prev, slug]
-    );
+    if (watchlist.includes(slug)) {
+      setWatchlist(watchlist.filter((item) => item !== slug));
+    } else {
+      setWatchlist([...watchlist, slug]);
+    }
   }
 
   return (
     <AppShell
       title="Toutes les mises à jour"
-      subtitle="Vue d’ensemble compacte et navigation simple"
+      subtitle="Cherche un jeu, ouvre sa page, ou ajoute-le à ta watchlist"
     >
-      <div className="grid grid-cols-1 gap-0 lg:grid-cols-[240px_minmax(0,1fr)_320px] border border-[#1d2731]">
-        <aside className="border-r border-[#1d2731] bg-[#111821]">
-          <div className="p-4">
-            <div className="mb-6">
-              <p className="mb-2 text-[11px] uppercase tracking-[0.2em] text-[#66c0f4]">
-                Navigation
-              </p>
+      <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
+        <aside className="border border-[#263241] bg-[#111821] p-4">
+          <h2 className="mb-4 text-sm font-bold uppercase tracking-[0.15em] text-[#66c0f4]">
+            Filtres
+          </h2>
 
-              <div className="space-y-1">
-                <Link href="/" className="block border border-[#263241] bg-[#182230] px-3 py-2 text-sm text-white">
-                  Toutes les mises à jour
-                </Link>
-                <Link href="/games" className="block px-3 py-2 text-sm text-[#8b98a5] hover:bg-[#182230] hover:text-white">
-                  Jeux
-                </Link>
-                <Link href="/watchlist" className="block px-3 py-2 text-sm text-[#8b98a5] hover:bg-[#182230] hover:text-white">
-                  Jeux suivis
-                </Link>
-                <Link href="/sources" className="block px-3 py-2 text-sm text-[#8b98a5] hover:bg-[#182230] hover:text-white">
-                  Sources
-                </Link>
+          <div className="space-y-4">
+            <div>
+              <label className="mb-2 block text-sm text-[#8b98a5]">
+                Recherche
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setShowSuggestions(true);
+                  }}
+                  onFocus={() => setShowSuggestions(true)}
+                  placeholder="Ex: Game A"
+                  className="w-full border border-[#314355] bg-[#182230] px-3 py-2 text-sm text-white outline-none placeholder:text-[#73808c]"
+                />
+
+                {showSuggestions && suggestions.length > 0 && search.trim() && (
+                  <div className="absolute z-20 mt-1 w-full border border-[#263241] bg-[#121a24]">
+                    {suggestions.map((item) => (
+                      <button
+                        key={item.slug}
+                        onClick={() => {
+                          setSearch(item.title);
+                          setShowSuggestions(false);
+                        }}
+                        className="block w-full border-b border-[#1d2731] px-3 py-2 text-left text-sm text-white hover:bg-[#182230]"
+                      >
+                        {item.title}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="mb-6">
-              <p className="mb-2 text-[11px] uppercase tracking-[0.2em] text-[#66c0f4]">
-                Filtres
-              </p>
-
-              <label className="mb-2 block text-xs text-[#8b98a5]">Source</label>
+            <div>
+              <label className="mb-2 block text-sm text-[#8b98a5]">
+                Source
+              </label>
               <select
-                value={sourceFilter}
-                onChange={(e) => setSourceFilter(e.target.value)}
-                className="w-full border border-[#263241] bg-[#182230] px-3 py-2 text-sm text-white outline-none"
+                value={selectedSource}
+                onChange={(e) => setSelectedSource(e.target.value)}
+                className="w-full border border-[#314355] bg-[#182230] px-3 py-2 text-sm text-white outline-none"
               >
-                <option value="all">Toutes</option>
+                <option value="all">Toutes les sources</option>
                 {sources.map((source) => (
                   <option key={source} value={source}>
                     {source}
@@ -136,152 +162,100 @@ export default function UpdatesDashboard({ updates }: Props) {
                 ))}
               </select>
             </div>
+
+            <div className="border border-[#263241] bg-[#182230] p-3">
+              <p className="text-xs text-[#8b98a5]">Résultats</p>
+              <p className="mt-1 text-xl font-bold text-white">
+                {filteredUpdates.length}
+              </p>
+            </div>
+
+            <div className="border border-[#263241] bg-[#182230] p-3">
+              <p className="text-xs text-[#8b98a5]">Jeux suivis</p>
+              <p className="mt-1 text-xl font-bold text-white">
+                {watchlist.length}
+              </p>
+            </div>
           </div>
         </aside>
 
-        <section className="min-w-0 bg-[#0f141a]">
-          <div className="border-b border-[#1d2731] bg-[#121a24] p-4">
-            <div className="relative w-full max-w-xl">
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  setShowSuggestions(true);
-                }}
-                onFocus={() => setShowSuggestions(true)}
-                placeholder="Rechercher un jeu, un slug, une source..."
-                className="w-full border border-[#314355] bg-[#182230] px-4 py-2.5 text-sm text-white outline-none placeholder:text-[#73808c]"
-              />
+        <section className="border border-[#263241] bg-[#111821]">
+          <div className="grid grid-cols-[2.2fr_1fr_170px_240px] border-b border-[#1d2731] bg-[#121a24] px-4 py-3 text-xs uppercase tracking-[0.12em] text-[#6f7c88]">
+            <div>Jeu</div>
+            <div>Source</div>
+            <div>Date</div>
+            <div>Actions</div>
+          </div>
 
-              {showSuggestions && suggestions.length > 0 && query.trim() && (
-                <div className="absolute z-30 mt-1 w-full border border-[#263241] bg-[#121a24] shadow-2xl">
-                  {suggestions.map((item) => (
+          {filteredUpdates.length === 0 ? (
+            <div className="p-6 text-sm text-[#8b98a5]">
+              Aucun résultat trouvé.
+            </div>
+          ) : (
+            filteredUpdates.map((item) => {
+              const followed = isInWatchlist(item.slug);
+
+              return (
+                <div
+                  key={item.id}
+                  className="grid grid-cols-[2.2fr_1fr_170px_240px] items-start border-b border-[#1d2731] px-4 py-4 hover:bg-[#121a24]"
+                >
+                  <div className="pr-4">
+                    <Link
+                      href={`/game/${item.slug}`}
+                      className="inline-block text-base font-semibold text-white underline-offset-4 hover:text-[#66c0f4] hover:underline"
+                    >
+                      Voir la page du jeu : {item.title}
+                    </Link>
+
+                    <p className="mt-1 text-xs text-[#6f7c88]">{item.slug}</p>
+
+                    <p className="mt-2 text-sm leading-6 text-[#aeb8c2]">
+                      {item.summary || 'Aucun résumé disponible.'}
+                    </p>
+                  </div>
+
+                  <div className="pr-4 text-sm text-[#c7d5e0]">{item.source}</div>
+
+                  <div className="pr-4 text-sm text-[#8b98a5]">
+                    {formatDate(item.published_at)}
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <Link
+                      href={`/game/${item.slug}`}
+                      className="bg-[#66c0f4] px-3 py-2 text-center text-sm font-semibold text-[#0b141b] hover:bg-[#8fd3ff]"
+                    >
+                      Voir la page du jeu
+                    </Link>
+
+                    <a
+                      href={item.article_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="bg-[#223041] px-3 py-2 text-center text-sm text-white hover:bg-[#2d4055]"
+                    >
+                      Ouvrir la source externe
+                    </a>
+
                     <button
-                      key={item.slug}
-                      onClick={() => {
-                        setQuery(item.title);
-                        setShowSuggestions(false);
-                      }}
-                      className="flex w-full items-center justify-between border-b border-[#1d2731] px-4 py-2.5 text-left hover:bg-[#182230]"
+                      onClick={() => toggleWatchlist(item.slug)}
+                      className={`px-3 py-2 text-sm font-medium ${
+                        followed
+                          ? 'bg-[#1f4e2f] text-[#baffc4] hover:bg-[#28653d]'
+                          : 'bg-[#2a475e] text-white hover:bg-[#3b6687]'
+                      }`}
                     >
-                      <span className="text-sm text-white">{item.title}</span>
-                      <span className="text-xs text-[#8b98a5]">{item.slug}</span>
+                      {followed
+                        ? 'Retirer de ma watchlist'
+                        : 'Ajouter à ma watchlist'}
                     </button>
-                  ))}
+                  </div>
                 </div>
-              )}
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <div className="min-w-[900px]">
-              <div className="grid grid-cols-[2.2fr_1fr_160px_170px_140px] border-b border-[#1d2731] bg-[#111821] px-4 py-3 text-[11px] uppercase tracking-[0.15em] text-[#6f7c88]">
-                <div>Jeu / Update</div>
-                <div>Source</div>
-                <div>Date</div>
-                <div>Navigation</div>
-                <div>Suivi</div>
-              </div>
-
-              {filtered.length === 0 ? (
-                <div className="p-8 text-sm text-[#8b98a5]">
-                  Aucun résultat pour cette recherche.
-                </div>
-              ) : (
-                filtered.map((item) => {
-                  const isWatched = watchlist.includes(item.slug);
-
-                  return (
-                    <div
-                      key={item.id}
-                      className="grid grid-cols-[2.2fr_1fr_160px_170px_140px] items-start border-b border-[#18212b] px-4 py-4 hover:bg-[#121a24]"
-                    >
-                      <div className="pr-4">
-                        <Link
-                          href={`/game/${item.slug}`}
-                          className="text-base font-semibold text-white hover:text-[#66c0f4]"
-                        >
-                          {item.title}
-                        </Link>
-
-                        <p className="mt-1 text-xs text-[#6f7c88]">{item.slug}</p>
-
-                        <p className="mt-2 line-clamp-2 text-sm leading-6 text-[#aeb8c2]">
-                          {item.summary || 'Aucun résumé disponible.'}
-                        </p>
-                      </div>
-
-                      <div className="pr-4 text-sm text-[#c7d5e0]">{item.source}</div>
-
-                      <div className="pr-4 text-sm text-[#8b98a5]">
-                        {item.published_at
-                          ? new Date(item.published_at).toLocaleString()
-                          : 'Date inconnue'}
-                      </div>
-
-                      <div className="flex flex-col gap-2 pr-4">
-                        <Link
-                          href={`/game/${item.slug}`}
-                          className="border border-[#2c3b4b] bg-[#182230] px-3 py-2 text-center text-sm text-white hover:bg-[#223041]"
-                        >
-                          Fiche
-                        </Link>
-
-                        <a
-                          href={item.article_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="border border-[#2c3b4b] bg-[#10161d] px-3 py-2 text-center text-sm text-[#8fbfe0] hover:bg-[#182230]"
-                        >
-                          Source
-                        </a>
-                      </div>
-
-                      <div>
-                        <button
-                          onClick={() => toggleWatchlist(item.slug)}
-                          className={`w-full px-3 py-2 text-sm font-medium ${
-                            isWatched
-                              ? 'bg-[#1f4e2f] text-[#baffc4] hover:bg-[#28653d]'
-                              : 'bg-[#2a475e] text-white hover:bg-[#3b6687]'
-                          }`}
-                        >
-                          {isWatched ? 'Suivi' : 'Suivre'}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
+              );
+            })
+          )}
         </section>
-
-        <aside className="border-l border-[#1d2731] bg-[#111821]">
-          <div className="p-4">
-            <h2 className="mb-3 text-[11px] uppercase tracking-[0.2em] text-[#66c0f4]">
-              Résumé
-            </h2>
-
-            <div className="space-y-3">
-              <div className="border border-[#263241] bg-[#182230] p-4">
-                <p className="text-xs text-[#8b98a5]">Updates</p>
-                <p className="mt-2 text-2xl font-bold text-white">{updates.length}</p>
-              </div>
-
-              <div className="border border-[#263241] bg-[#182230] p-4">
-                <p className="text-xs text-[#8b98a5]">Résultats</p>
-                <p className="mt-2 text-2xl font-bold text-white">{filtered.length}</p>
-              </div>
-
-              <div className="border border-[#263241] bg-[#182230] p-4">
-                <p className="text-xs text-[#8b98a5]">Suivis</p>
-                <p className="mt-2 text-2xl font-bold text-white">{watchlist.length}</p>
-              </div>
-            </div>
-          </div>
-        </aside>
       </div>
     </AppShell>
   );
