@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     siteName: "GameScraper",
     images: [
       {
-        url: "/opengraph-image",
+        url: "/og-image.png",
         width: 1200,
         height: 630,
         alt: "GameScraper - Suivi des mises à jour de jeux",
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     title: "GameScraper",
     description:
       "Suis les dernières mises à jour de jeux, explore les fiches, et garde une watchlist locale.",
-    images: ["/opengraph-image"],
+    images: ["/og-image.png"],
   },
 };
 
