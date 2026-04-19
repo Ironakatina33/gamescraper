@@ -1,33 +1,15 @@
 import * as cheerio from 'cheerio';
 
-export type ScrapedGameUpdate = {
-  title: string;
-  slug: string;
-  source: string;
-  article_url: string;
-  image_url: string | null;
-  summary: string | null;
-  published_at: string | null;
+export const genericConfig = {
+  baseUrl: 'https://game3rb.com/',
+  itemSelector: 'article.post-hentry',
+  titleSelector: 'h3.entry-title a',
+  linkSelector: 'h3.entry-title a',
+  imageSelector: 'img.entry-image',
+  summarySelector: '.summaryy',
+  timeSelector: 'time.entry-date',
+  source: 'game3rb',
 };
-
-type ScraperConfig = {
-  sourceName: string;
-  baseUrl: string;
-  listItemSelector: string;
-  titleSelector: string;
-  linkSelector: string;
-  summarySelector?: string;
-  imageSelector?: string;
-  dateSelector?: string;
-  dateAttribute?: string;
-  imageAttribute?: string;
-  linkAttribute?: string;
-};
-
-function cleanText(text: string | undefined | null) {
-  if (!text) return '';
-  return text.replace(/\s+/g, ' ').trim();
-}
 
 function slugify(text: string) {
   return text
@@ -38,90 +20,41 @@ function slugify(text: string) {
     .replace(/^-+|-+$/g, '');
 }
 
-function makeAbsoluteUrl(baseUrl: string, value: string | undefined | null) {
-  if (!value) return '';
-
-  try {
-    return new URL(value, baseUrl).toString();
-  } catch {
-    return value;
-  }
-}
-
-function tryParseDate(value: string | undefined | null) {
-  if (!value) return null;
-
-  const cleaned = cleanText(value);
-  if (!cleaned) return null;
-
-  const date = new Date(cleaned);
-  if (Number.isNaN(date.getTime())) return null;
-
-  return date.toISOString();
-}
-
 export function parseGenericHtml(
   html: string,
-  config: ScraperConfig
-): ScrapedGameUpdate[] {
+  config: typeof genericConfig
+) {
   const $ = cheerio.load(html);
-  const results: ScrapedGameUpdate[] = [];
+  const results: any[] = [];
 
-  $(config.listItemSelector).each((_, element) => {
-    const root = $(element);
+  $(config.itemSelector).each((_, el) => {
+    const title = $(el).find(config.titleSelector).first().text().trim();
+    const article_url = $(el).find(config.linkSelector).first().attr('href')?.trim() || '';
+    const image_url = $(el).find(config.imageSelector).first().attr('src')?.trim() || '';
+    const summary = $(el)
+      .find(config.summarySelector)
+      .first()
+      .text()
+      .replace(/\s+/g, ' ')
+      .trim();
 
-    const title = cleanText(root.find(config.titleSelector).first().text());
+    const publishedRaw =
+      $(el).find(config.timeSelector).first().attr('datetime')?.trim() || '';
 
-    const rawLink =
-      root.find(config.linkSelector).first().attr(config.linkAttribute || 'href') || '';
-
-    const rawSummary = config.summarySelector
-      ? cleanText(root.find(config.summarySelector).first().text())
-      : '';
-
-    const rawImage = config.imageSelector
-      ? root.find(config.imageSelector).first().attr(config.imageAttribute || 'src') || ''
-      : '';
-
-    let rawDate = '';
-    if (config.dateSelector) {
-      const dateElement = root.find(config.dateSelector).first();
-      rawDate = config.dateAttribute
-        ? dateElement.attr(config.dateAttribute) || ''
-        : dateElement.text();
-    }
-
-    const articleUrl = makeAbsoluteUrl(config.baseUrl, rawLink);
-    const imageUrl = rawImage ? makeAbsoluteUrl(config.baseUrl, rawImage) : null;
-
-    if (!title || !articleUrl) return;
+    if (!title || !article_url) return;
 
     results.push({
       title,
       slug: slugify(title),
-      source: config.sourceName,
-      article_url: articleUrl,
-      image_url: imageUrl,
-      summary: rawSummary || null,
-      published_at: tryParseDate(rawDate),
+      source: config.source,
+      article_url,
+      image_url: image_url || null,
+      summary: summary || null,
+      published_at: publishedRaw
+        ? new Date(publishedRaw).toISOString()
+        : new Date().toISOString(),
     });
   });
 
   return results;
 }
-
-export const genericConfig: ScraperConfig = {
-  sourceName: 'game3rb',
-  baseUrl: 'https://game3rb.com',
-
-  listItemSelector: 'article.post-hentry',
-  titleSelector: '.entry-title a',
-  linkSelector: '.entry-title a',
-  summarySelector: '.summaryy',
-  imageSelector: 'img.entry-image',
-  dateSelector: 'time.entry-date',
-
-  linkAttribute: 'href',
-  imageAttribute: 'src',
-  dateAttribute: 'datetime',
-};
