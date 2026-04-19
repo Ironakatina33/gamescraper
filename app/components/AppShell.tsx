@@ -12,15 +12,14 @@ type AppShellProps = {
 };
 
 const navItems = [
-  { href: '/', label: 'Toutes les mises à jour' },
+  { href: '/updates', label: 'Toutes les mises à jour' },
   { href: '/games', label: 'Liste des jeux' },
   { href: '/watchlist', label: 'Ma watchlist' },
   { href: '/sources', label: 'Sources' },
 ];
 
 function isActiveLink(pathname: string, href: string) {
-  if (href === '/') return pathname === '/';
-  return pathname.startsWith(href);
+  return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 export default function AppShell({
