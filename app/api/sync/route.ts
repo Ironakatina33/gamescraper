@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { parseGenericHtml } from '../../../lib/scraper';
 
@@ -7,7 +7,14 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const authHeader = req.headers.get('authorization');
+  const expected = `Bearer ${process.env.CRON_SECRET}`;
+
+  if (authHeader !== expected) {
+    return NextResponse.json({ ok: false, error: 'Non autorisé' }, { status: 401 });
+  }
+
   try {
     const html = `
       <div class="post">
@@ -24,21 +31,17 @@ export async function GET() {
 
     const updates = parseGenericHtml(html);
 
-    if (updates.length === 0) {
-      return NextResponse.json({ ok: true, inserted: 0, message: 'Aucun élément trouvé' });
-    }
-
-   const { data, error } = await supabase
-  .from('game_updates')
-  .upsert(updates, { onConflict: 'article_url' })
-  .select();
+    const { data, error } = await supabase
+      .from('game_updates')
+      .upsert(updates, { onConflict: 'article_url' })
+      .select();
 
     if (error) {
       return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ ok: true, inserted: data.length, data });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ ok: false, error: 'Erreur inconnue' }, { status: 500 });
   }
 }
