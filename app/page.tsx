@@ -10,11 +10,9 @@ export default async function HomePage() {
 
   if (error) {
     return (
-      <main className="min-h-screen bg-zinc-950 text-white p-8">
-        <div className="max-w-6xl mx-auto">
-          <h1 className="text-4xl font-bold mb-4">Erreur</h1>
-          <p className="text-red-400">{error.message}</p>
-        </div>
+      <main className="min-h-screen bg-[#0f141a] text-white p-8">
+        <h1 className="text-3xl font-bold">Erreur</h1>
+        <p className="mt-3 text-red-400">{error.message}</p>
       </main>
     );
   }
