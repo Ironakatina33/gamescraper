@@ -1,5 +1,8 @@
 import Link from 'next/link';
-
+export const metadata = {
+  title: 'Accueil | GameScraper',
+  description: 'Page d’accueil de GameScraper, le tracker de mises à jour de jeux.',
+};
 export default function HomePage() {
   return (
     <main className="min-h-screen overflow-hidden bg-[#0b1118] text-white">
