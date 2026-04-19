@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
+import { cx, ui } from '../../lib/ui';
 import AppShell from './AppShell';
 
 type GameUpdate = {
@@ -55,15 +56,15 @@ export default function UpdatesDashboard({ updates }: UpdatesDashboardProps) {
   }, [updates]);
 
   const filteredUpdates = useMemo(() => {
-    const searchValue = search.trim().toLowerCase();
+    const value = search.trim().toLowerCase();
 
     return updates.filter((item) => {
       const matchesSearch =
-        !searchValue ||
-        item.title.toLowerCase().includes(searchValue) ||
-        item.slug.toLowerCase().includes(searchValue) ||
-        (item.summary ?? '').toLowerCase().includes(searchValue) ||
-        item.source.toLowerCase().includes(searchValue);
+        !value ||
+        item.title.toLowerCase().includes(value) ||
+        item.slug.toLowerCase().includes(value) ||
+        (item.summary ?? '').toLowerCase().includes(value) ||
+        item.source.toLowerCase().includes(value);
 
       const matchesSource =
         selectedSource === 'all' || item.source === selectedSource;
@@ -73,15 +74,15 @@ export default function UpdatesDashboard({ updates }: UpdatesDashboardProps) {
   }, [updates, search, selectedSource]);
 
   const suggestions = useMemo(() => {
-    const searchValue = search.trim().toLowerCase();
-    if (!searchValue) return [];
+    const value = search.trim().toLowerCase();
+    if (!value) return [];
 
     const uniqueGames = Array.from(
       new Map(updates.map((item) => [item.slug, item])).values()
     );
 
     return uniqueGames
-      .filter((item) => item.title.toLowerCase().includes(searchValue))
+      .filter((item) => item.title.toLowerCase().includes(value))
       .slice(0, 5);
   }, [updates, search]);
 
@@ -103,16 +104,13 @@ export default function UpdatesDashboard({ updates }: UpdatesDashboardProps) {
       subtitle="Cherche un jeu, ouvre sa page, ou ajoute-le à ta watchlist"
     >
       <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
-        <aside className="border border-[#263241] bg-[#111821] p-4">
-          <h2 className="mb-4 text-sm font-bold uppercase tracking-[0.15em] text-[#66c0f4]">
-            Filtres
-          </h2>
+        <aside className={`${ui.cardSoft} p-4`}>
+          <h2 className={ui.sectionTitle}>Filtres</h2>
 
           <div className="space-y-4">
             <div>
-              <label className="mb-2 block text-sm text-[#8b98a5]">
-                Recherche
-              </label>
+              <label className={ui.label}>Recherche</label>
+
               <div className="relative">
                 <input
                   type="text"
@@ -123,7 +121,7 @@ export default function UpdatesDashboard({ updates }: UpdatesDashboardProps) {
                   }}
                   onFocus={() => setShowSuggestions(true)}
                   placeholder="Ex: Game A"
-                  className="w-full border border-[#314355] bg-[#182230] px-3 py-2 text-sm text-white outline-none placeholder:text-[#73808c]"
+                  className={ui.input}
                 />
 
                 {showSuggestions && suggestions.length > 0 && search.trim() && (
@@ -146,13 +144,12 @@ export default function UpdatesDashboard({ updates }: UpdatesDashboardProps) {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm text-[#8b98a5]">
-                Source
-              </label>
+              <label className={ui.label}>Source</label>
+
               <select
                 value={selectedSource}
                 onChange={(e) => setSelectedSource(e.target.value)}
-                className="w-full border border-[#314355] bg-[#182230] px-3 py-2 text-sm text-white outline-none"
+                className={ui.select}
               >
                 <option value="all">Toutes les sources</option>
                 {sources.map((source) => (
@@ -163,14 +160,14 @@ export default function UpdatesDashboard({ updates }: UpdatesDashboardProps) {
               </select>
             </div>
 
-            <div className="border border-[#263241] bg-[#182230] p-3">
+            <div className={`${ui.card} p-3`}>
               <p className="text-xs text-[#8b98a5]">Résultats</p>
               <p className="mt-1 text-xl font-bold text-white">
                 {filteredUpdates.length}
               </p>
             </div>
 
-            <div className="border border-[#263241] bg-[#182230] p-3">
+            <div className={`${ui.card} p-3`}>
               <p className="text-xs text-[#8b98a5]">Jeux suivis</p>
               <p className="mt-1 text-xl font-bold text-white">
                 {watchlist.length}
@@ -179,7 +176,7 @@ export default function UpdatesDashboard({ updates }: UpdatesDashboardProps) {
           </div>
         </aside>
 
-        <section className="border border-[#263241] bg-[#111821]">
+        <section className={ui.cardSoft}>
           <div className="grid grid-cols-[2.2fr_1fr_170px_240px] border-b border-[#1d2731] bg-[#121a24] px-4 py-3 text-xs uppercase tracking-[0.12em] text-[#6f7c88]">
             <div>Jeu</div>
             <div>Source</div>
@@ -198,7 +195,10 @@ export default function UpdatesDashboard({ updates }: UpdatesDashboardProps) {
               return (
                 <div
                   key={item.id}
-                  className="grid grid-cols-[2.2fr_1fr_170px_240px] items-start border-b border-[#1d2731] px-4 py-4 hover:bg-[#121a24]"
+                  className={cx(
+                    'grid grid-cols-[2.2fr_1fr_170px_240px] items-start border-b border-[#1d2731] px-4 py-4',
+                    ui.rowHover
+                  )}
                 >
                   <div className="pr-4">
                     <Link
@@ -222,10 +222,7 @@ export default function UpdatesDashboard({ updates }: UpdatesDashboardProps) {
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <Link
-                      href={`/game/${item.slug}`}
-                      className="bg-[#66c0f4] px-3 py-2 text-center text-sm font-semibold text-[#0b141b] hover:bg-[#8fd3ff]"
-                    >
+                    <Link href={`/game/${item.slug}`} className={ui.buttonPrimary}>
                       Voir la page du jeu
                     </Link>
 
@@ -233,18 +230,16 @@ export default function UpdatesDashboard({ updates }: UpdatesDashboardProps) {
                       href={item.article_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="bg-[#223041] px-3 py-2 text-center text-sm text-white hover:bg-[#2d4055]"
+                      className={ui.buttonSecondary}
                     >
                       Ouvrir la source externe
                     </a>
 
                     <button
                       onClick={() => toggleWatchlist(item.slug)}
-                      className={`px-3 py-2 text-sm font-medium ${
-                        followed
-                          ? 'bg-[#1f4e2f] text-[#baffc4] hover:bg-[#28653d]'
-                          : 'bg-[#2a475e] text-white hover:bg-[#3b6687]'
-                      }`}
+                      className={
+                        followed ? ui.buttonWatchRemove : ui.buttonWatchAdd
+                      }
                     >
                       {followed
                         ? 'Retirer de ma watchlist'
