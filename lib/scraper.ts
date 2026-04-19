@@ -1,43 +1,127 @@
 import * as cheerio from 'cheerio';
 
-export type ScrapedUpdate = {
+export type ScrapedGameUpdate = {
   title: string;
   slug: string;
   source: string;
   article_url: string;
-  image_url?: string | null;
-  summary?: string | null;
-  published_at?: string | null;
+  image_url: string | null;
+  summary: string | null;
+  published_at: string | null;
 };
 
-export function parseGenericHtml(html: string): ScrapedUpdate[] {
+type ScraperConfig = {
+  sourceName: string;
+  baseUrl: string;
+  listItemSelector: string;
+  titleSelector: string;
+  linkSelector: string;
+  summarySelector?: string;
+  imageSelector?: string;
+  dateSelector?: string;
+  dateAttribute?: string;
+  imageAttribute?: string;
+  linkAttribute?: string;
+};
+
+function cleanText(text: string | undefined | null) {
+  if (!text) return '';
+  return text.replace(/\s+/g, ' ').trim();
+}
+
+function slugify(text: string) {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function makeAbsoluteUrl(baseUrl: string, value: string | undefined | null) {
+  if (!value) return '';
+
+  try {
+    return new URL(value, baseUrl).toString();
+  } catch {
+    return value;
+  }
+}
+
+function tryParseDate(value: string | undefined | null) {
+  if (!value) return null;
+
+  const cleaned = cleanText(value);
+  if (!cleaned) return null;
+
+  const date = new Date(cleaned);
+  if (Number.isNaN(date.getTime())) return null;
+
+  return date.toISOString();
+}
+
+export function parseGenericHtml(
+  html: string,
+  config: ScraperConfig
+): ScrapedGameUpdate[] {
   const $ = cheerio.load(html);
-  const updates: ScrapedUpdate[] = [];
+  const results: ScrapedGameUpdate[] = [];
 
-  $('.post, .article, .entry, .card').each((_, el) => {
-    const title = $(el).find('h2 a, h3 a, .title a').first().text().trim();
-    const article_url = $(el).find('h2 a, h3 a, .title a').first().attr('href')?.trim();
-    const image_url = $(el).find('img').first().attr('src')?.trim() || null;
-    const summary = $(el).find('p, .excerpt, .summary').first().text().trim() || null;
-    const published_at = $(el).find('time').first().attr('datetime') || null;
+  $(config.listItemSelector).each((_, element) => {
+    const root = $(element);
 
-    if (!title || !article_url) return;
+    const title = cleanText(root.find(config.titleSelector).first().text());
 
-    const slug = title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
+    const rawLink =
+      root.find(config.linkSelector).first().attr(config.linkAttribute || 'href') || '';
 
-    updates.push({
+    const rawSummary = config.summarySelector
+      ? cleanText(root.find(config.summarySelector).first().text())
+      : '';
+
+    const rawImage = config.imageSelector
+      ? root.find(config.imageSelector).first().attr(config.imageAttribute || 'src') || ''
+      : '';
+
+    let rawDate = '';
+    if (config.dateSelector) {
+      const dateElement = root.find(config.dateSelector).first();
+      rawDate = config.dateAttribute
+        ? dateElement.attr(config.dateAttribute) || ''
+        : dateElement.text();
+    }
+
+    const articleUrl = makeAbsoluteUrl(config.baseUrl, rawLink);
+    const imageUrl = rawImage ? makeAbsoluteUrl(config.baseUrl, rawImage) : null;
+
+    if (!title || !articleUrl) return;
+
+    results.push({
       title,
-      slug,
-      source: 'generic',
-      article_url,
-      image_url,
-      summary,
-      published_at,
+      slug: slugify(title),
+      source: config.sourceName,
+      article_url: articleUrl,
+      image_url: imageUrl,
+      summary: rawSummary || null,
+      published_at: tryParseDate(rawDate),
     });
   });
 
-  return updates;
+  return results;
 }
+
+export const genericConfig: ScraperConfig = {
+  sourceName: 'game3rb',
+  baseUrl: 'https://game3rb.com',
+
+  listItemSelector: 'article.post-hentry',
+  titleSelector: '.entry-title a',
+  linkSelector: '.entry-title a',
+  summarySelector: '.summaryy',
+  imageSelector: 'img.entry-image',
+  dateSelector: 'time.entry-date',
+
+  linkAttribute: 'href',
+  imageAttribute: 'src',
+  dateAttribute: 'datetime',
+};
