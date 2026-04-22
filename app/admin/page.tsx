@@ -1,42 +1,23 @@
 'use client';
 
-import { useState, useEffect, useContext } from 'react';
-import AppShell from '../components/AppShell';
-import { ui } from '../../lib/ui';
-import { ToastContext } from '../components/ToastContext';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
 
-type GameUpdate = {
-  id: string;
-  title: string;
-  slug: string;
-  source: string;
-  article_url: string;
-  image_url?: string | null;
-  summary?: string | null;
-  published_at?: string | null;
-};
-
-// Safe toast hook that works even without ToastProvider
-function useSafeToast() {
-  const context = useContext(ToastContext);
-  if (!context) {
-    // Return no-op functions if no ToastProvider
-    return {
-      showSuccess: (msg: string) => console.log('Success:', msg),
-      showError: (msg: string) => console.error('Error:', msg),
-      showInfo: (msg: string) => console.log('Info:', msg),
-    };
-  }
-  return context;
-}
-
+// Standalone admin page without AppShell to avoid ThemeProvider issues during build
 export default function AdminPage() {
-  const { showSuccess, showError, showInfo } = useSafeToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState<'success' | 'error'>('success');
   const [stats, setStats] = useState({ updates: 0, details: 0, sources: 0 });
-  const [recentUpdates, setRecentUpdates] = useState<GameUpdate[]>([]);
-  const [scrapeUrl, setScrapeUrl] = useState('https://game3rb.com');
+  const [recentUpdates, setRecentUpdates] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'actions' | 'stats' | 'recent'>('actions');
+
+  // UI classes inline to avoid dependency issues
+  const cardClass = 'rounded-xl border border-[#263241] bg-[#111b28] p-5';
+  const buttonPrimary = 'rounded-xl bg-[#66c0f4] px-4 py-3 text-[#0b141b] font-semibold hover:bg-[#8fd3ff] disabled:opacity-50 transition';
+  const buttonSecondary = 'rounded-xl bg-[#223041] px-4 py-3 text-white font-semibold hover:bg-[#2d4055] disabled:opacity-50 transition';
+  const buttonDanger = 'rounded-xl bg-red-500/20 px-4 py-3 text-red-200 font-semibold hover:bg-red-500/30 disabled:opacity-50 transition';
+  const sectionTitle = 'text-lg font-bold text-white';
 
   useEffect(() => {
     loadStats();
@@ -44,7 +25,6 @@ export default function AdminPage() {
 
   async function loadStats() {
     try {
-      // Fetch real stats from Supabase via API
       const response = await fetch('/api/admin/stats');
       if (response.ok) {
         const data = await response.json();
@@ -60,6 +40,12 @@ export default function AdminPage() {
     }
   }
 
+  function showMessage(msg: string, type: 'success' | 'error' = 'success') {
+    setMessage(msg);
+    setMessageType(type);
+    setTimeout(() => setMessage(''), 5000);
+  }
+
   async function addSampleData() {
     setIsLoading(true);
     
@@ -68,13 +54,13 @@ export default function AdminPage() {
       const data = await response.json();
       
       if (data.ok) {
-        showSuccess(`${data.data?.length || 0} jeux ajoutés`);
+        showMessage(`${data.data?.length || 0} jeux ajoutés avec succès`);
         loadStats();
       } else {
-        showError(data.error || 'Erreur lors de l\'ajout');
+        showMessage(data.error || 'Erreur lors de l\'ajout', 'error');
       }
     } catch (error) {
-      showError('Erreur de connexion');
+      showMessage('Erreur de connexion', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -92,13 +78,13 @@ export default function AdminPage() {
       const data = await response.json();
       
       if (data.ok) {
-        showSuccess(`${data.found || 0} jeux trouvés, ${data.inserted || 0} insérés`);
+        showMessage(`${data.found || 0} jeux trouvés, ${data.inserted || 0} insérés`);
         loadStats();
       } else {
-        showError(data.error || 'Erreur de scraping');
+        showMessage(data.error || 'Erreur de scraping', 'error');
       }
     } catch (error) {
-      showError('Erreur de connexion');
+      showMessage('Erreur de connexion', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -106,7 +92,6 @@ export default function AdminPage() {
 
   async function scrapeDetails() {
     setIsLoading(true);
-    showInfo('Récupération des détails en cours...');
     
     try {
       const response = await fetch('/api/scrape-details', {
@@ -116,13 +101,13 @@ export default function AdminPage() {
       
       if (data.results) {
         const successCount = data.results.filter((r: {ok: boolean}) => r.ok).length;
-        showSuccess(`${successCount} détails scrapés avec succès`);
+        showMessage(`${successCount} détails scrapés avec succès`);
         loadStats();
       } else {
-        showError('Erreur lors du scraping des détails');
+        showMessage('Erreur lors du scraping des détails', 'error');
       }
     } catch (error) {
-      showError('Erreur de connexion');
+      showMessage('Erreur de connexion', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -132,171 +117,198 @@ export default function AdminPage() {
     setIsLoading(true);
     
     try {
-      // Clear localStorage on client
       if (typeof window !== 'undefined') {
         localStorage.removeItem('watchlist-games');
         localStorage.removeItem('watchlist-seen-by-slug');
         localStorage.removeItem('gamescraper-theme');
       }
-      showSuccess('Cache local effacé');
+      showMessage('Cache local effacé');
     } catch (error) {
-      showError('Erreur lors de l\'effacement du cache');
+      showMessage('Erreur lors de l\'effacement du cache', 'error');
     } finally {
       setIsLoading(false);
     }
   }
 
   return (
-    <AppShell title="Administration" subtitle="Gestion du site GameScraper">
-      <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
-        {/* Sidebar */}
-        <aside className="space-y-4">
-          <div className={`${ui.card} p-4`}>
-            <h2 className={ui.sectionTitle}>Navigation</h2>
-            <div className="mt-3 space-y-2">
-              <button
-                onClick={() => setActiveTab('actions')}
-                className={`w-full rounded-lg px-3 py-2 text-left text-sm transition ${
-                  activeTab === 'actions' ? 'bg-[#66c0f4] text-[#0b141b]' : 'bg-[#111b28] text-white hover:bg-[#1a2838]'
-                }`}
-              >
-                Actions
-              </button>
-              <button
-                onClick={() => setActiveTab('stats')}
-                className={`w-full rounded-lg px-3 py-2 text-left text-sm transition ${
-                  activeTab === 'stats' ? 'bg-[#66c0f4] text-[#0b141b]' : 'bg-[#111b28] text-white hover:bg-[#1a2838]'
-                }`}
-              >
-                Statistiques
-              </button>
-              <button
-                onClick={() => setActiveTab('recent')}
-                className={`w-full rounded-lg px-3 py-2 text-left text-sm transition ${
-                  activeTab === 'recent' ? 'bg-[#66c0f4] text-[#0b141b]' : 'bg-[#111b28] text-white hover:bg-[#1a2838]'
-                }`}
-              >
-                Données récentes
-              </button>
-            </div>
+    <div className="min-h-screen bg-[#0b1118] text-white">
+      {/* Header */}
+      <header className="border-b border-[#1e2d3d] bg-[#111b28]">
+        <div className="mx-auto max-w-6xl px-4 py-4">
+          <div className="flex items-center justify-between">
+            <Link href="/" className="inline-flex items-center gap-2 text-xl font-bold text-[#66c0f4]">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="2" y="6" width="20" height="12" rx="2" />
+                <path d="M6 10h.01M6 14h.01" />
+              </svg>
+              GameScraper
+            </Link>
+            <span className="rounded-lg bg-[#66c0f4]/20 px-3 py-1 text-sm text-[#66c0f4]">
+              Administration
+            </span>
           </div>
+        </div>
+      </header>
 
-          <div className={`${ui.card} p-4`}>
-            <h3 className="text-sm font-semibold text-[#8b98a5]">Admin protégé</h3>
-            <p className="mt-2 text-xs text-[#6f7c88]">
-              Cette page est accessible uniquement avec le secret admin.
-            </p>
+      {/* Main Content */}
+      <main className="mx-auto max-w-6xl px-4 py-6">
+        {/* Title */}
+        <div className="mb-6">
+          <h1 className="text-3xl font-black text-white">Administration</h1>
+          <p className="mt-1 text-[#8b98a5]">Gestion du site GameScraper</p>
+        </div>
+
+        {/* Message */}
+        {message && (
+          <div className={`mb-6 rounded-xl p-4 ${messageType === 'success' ? 'bg-green-500/20 text-green-200' : 'bg-red-500/20 text-red-200'}`}>
+            {message}
           </div>
-        </aside>
+        )}
 
-        {/* Main Content */}
-        <section>
-          {activeTab === 'actions' && (
-            <div className="space-y-4">
-              <div className={`${ui.card} p-5`}>
-                <h2 className="text-xl font-bold text-white mb-4">Actions administrateur</h2>
-                
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <button
-                    onClick={addSampleData}
-                    disabled={isLoading}
-                    className="rounded-xl bg-[#66c0f4] px-4 py-3 text-[#0b141b] font-semibold hover:bg-[#8fd3ff] disabled:opacity-50 transition"
-                  >
-                    {isLoading ? 'Chargement...' : '🎮 Ajouter données d\'exemple'}
-                  </button>
-                  
-                  <button
-                    onClick={scrapeData}
-                    disabled={isLoading}
-                    className="rounded-xl bg-[#223041] px-4 py-3 text-white font-semibold hover:bg-[#2d4055] disabled:opacity-50 transition"
-                  >
-                    {isLoading ? 'Scraping...' : '🌐 Scraper game3rb.com'}
-                  </button>
-
-                  <button
-                    onClick={scrapeDetails}
-                    disabled={isLoading}
-                    className="rounded-xl bg-[#223041] px-4 py-3 text-white font-semibold hover:bg-[#2d4055] disabled:opacity-50 transition"
-                  >
-                    {isLoading ? 'Scraping...' : '📄 Scraper les détails'}
-                  </button>
-
-                  <button
-                    onClick={clearCache}
-                    disabled={isLoading}
-                    className="rounded-xl bg-red-500/20 px-4 py-3 text-red-200 font-semibold hover:bg-red-500/30 disabled:opacity-50 transition"
-                  >
-                    🗑️ Vider le cache local
-                  </button>
-                </div>
+        <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+          {/* Sidebar */}
+          <aside className="space-y-4">
+            <div className={cardClass}>
+              <h2 className={sectionTitle}>Navigation</h2>
+              <div className="mt-3 space-y-2">
+                <button
+                  onClick={() => setActiveTab('actions')}
+                  className={`w-full rounded-lg px-3 py-2 text-left text-sm transition ${
+                    activeTab === 'actions' ? 'bg-[#66c0f4] text-[#0b141b]' : 'bg-[#111821] text-white hover:bg-[#1a2838]'
+                  }`}
+                >
+                  Actions
+                </button>
+                <button
+                  onClick={() => setActiveTab('stats')}
+                  className={`w-full rounded-lg px-3 py-2 text-left text-sm transition ${
+                    activeTab === 'stats' ? 'bg-[#66c0f4] text-[#0b141b]' : 'bg-[#111821] text-white hover:bg-[#1a2838]'
+                  }`}
+                >
+                  Statistiques
+                </button>
+                <button
+                  onClick={() => setActiveTab('recent')}
+                  className={`w-full rounded-lg px-3 py-2 text-left text-sm transition ${
+                    activeTab === 'recent' ? 'bg-[#66c0f4] text-[#0b141b]' : 'bg-[#111821] text-white hover:bg-[#1a2838]'
+                  }`}
+                >
+                  Données récentes
+                </button>
               </div>
+            </div>
 
-              <div className={`${ui.card} p-5`}>
-                <h3 className="text-lg font-bold text-white mb-3">Configuration scraping</h3>
-                <div className="space-y-3">
-                  <div>
-                    <label className={ui.label}>URL à scraper</label>
-                    <input
-                      type="text"
-                      value={scrapeUrl}
-                      onChange={(e) => setScrapeUrl(e.target.value)}
-                      className={ui.input}
-                      placeholder="https://game3rb.com"
-                    />
+            <div className={cardClass}>
+              <h3 className="text-sm font-semibold text-[#8b98a5]">Admin protégé</h3>
+              <p className="mt-2 text-xs text-[#6f7c88]">
+                Cette page est accessible uniquement avec le secret admin.
+              </p>
+            </div>
+
+            <div className={cardClass}>
+              <h3 className="text-sm font-semibold text-[#8b98a5]">Navigation rapide</h3>
+              <div className="mt-2 space-y-1">
+                <Link href="/" className="block text-sm text-[#66c0f4] hover:underline">Accueil</Link>
+                <Link href="/updates" className="block text-sm text-[#66c0f4] hover:underline">Updates</Link>
+                <Link href="/games" className="block text-sm text-[#66c0f4] hover:underline">Jeux</Link>
+                <Link href="/watchlist" className="block text-sm text-[#66c0f4] hover:underline">Watchlist</Link>
+              </div>
+            </div>
+          </aside>
+
+          {/* Main Content */}
+          <section>
+            {activeTab === 'actions' && (
+              <div className="space-y-4">
+                <div className={cardClass}>
+                  <h2 className="text-xl font-bold text-white mb-4">Actions administrateur</h2>
+                  
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <button
+                      onClick={addSampleData}
+                      disabled={isLoading}
+                      className={buttonPrimary}
+                    >
+                      {isLoading ? 'Chargement...' : '🎮 Ajouter données d\'exemple'}
+                    </button>
+                    
+                    <button
+                      onClick={scrapeData}
+                      disabled={isLoading}
+                      className={buttonSecondary}
+                    >
+                      {isLoading ? 'Scraping...' : '🌐 Scraper game3rb.com'}
+                    </button>
+
+                    <button
+                      onClick={scrapeDetails}
+                      disabled={isLoading}
+                      className={buttonSecondary}
+                    >
+                      {isLoading ? 'Scraping...' : '📄 Scraper les détails'}
+                    </button>
+
+                    <button
+                      onClick={clearCache}
+                      disabled={isLoading}
+                      className={buttonDanger}
+                    >
+                      🗑️ Vider le cache local
+                    </button>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {activeTab === 'stats' && (
-            <div className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-3">
-                <div className={`${ui.card} p-5 text-center`}>
-                  <p className="text-sm text-[#8b98a5]">Updates totales</p>
-                  <p className="mt-2 text-4xl font-black text-[#66c0f4]">{stats.updates}</p>
-                </div>
-                <div className={`${ui.card} p-5 text-center`}>
-                  <p className="text-sm text-[#8b98a5]">Détails scrapés</p>
-                  <p className="mt-2 text-4xl font-black text-white">{stats.details}</p>
-                </div>
-                <div className={`${ui.card} p-5 text-center`}>
-                  <p className="text-sm text-[#8b98a5]">Sources</p>
-                  <p className="mt-2 text-4xl font-black text-white">{stats.sources}</p>
+            {activeTab === 'stats' && (
+              <div className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className={cardClass + ' text-center'}>
+                    <p className="text-sm text-[#8b98a5]">Updates totales</p>
+                    <p className="mt-2 text-4xl font-black text-[#66c0f4]">{stats.updates}</p>
+                  </div>
+                  <div className={cardClass + ' text-center'}>
+                    <p className="text-sm text-[#8b98a5]">Détails scrapés</p>
+                    <p className="mt-2 text-4xl font-black text-white">{stats.details}</p>
+                  </div>
+                  <div className={cardClass + ' text-center'}>
+                    <p className="text-sm text-[#8b98a5]">Sources</p>
+                    <p className="mt-2 text-4xl font-black text-white">{stats.sources}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {activeTab === 'recent' && (
-            <div className={`${ui.card} p-5`}>
-              <h2 className="text-xl font-bold text-white mb-4">Données récentes</h2>
-              {recentUpdates.length === 0 ? (
-                <p className="text-[#8b98a5]">Aucune donnée disponible.</p>
-              ) : (
-                <div className="space-y-3">
-                  {recentUpdates.slice(0, 10).map((update) => (
-                    <div key={update.id} className="flex items-center justify-between border-b border-[#263241] pb-3 last:border-0">
-                      <div>
-                        <p className="font-semibold text-white">{update.title}</p>
-                        <p className="text-sm text-[#8b98a5]">{update.source} • {update.slug}</p>
+            {activeTab === 'recent' && (
+              <div className={cardClass}>
+                <h2 className="text-xl font-bold text-white mb-4">Données récentes</h2>
+                {recentUpdates.length === 0 ? (
+                  <p className="text-[#8b98a5]">Aucune donnée disponible.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {recentUpdates.slice(0, 10).map((update) => (
+                      <div key={update.id} className="flex items-center justify-between border-b border-[#263241] pb-3 last:border-0">
+                        <div>
+                          <p className="font-semibold text-white">{update.title}</p>
+                          <p className="text-sm text-[#8b98a5]">{update.source} • {update.slug}</p>
+                        </div>
+                        <a
+                          href={update.article_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-sm text-[#66c0f4] hover:underline"
+                        >
+                          Voir →
+                        </a>
                       </div>
-                      <a
-                        href={update.article_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-sm text-[#66c0f4] hover:underline"
-                      >
-                        Voir →
-                      </a>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </section>
-      </div>
-    </AppShell>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+        </div>
+      </main>
+    </div>
   );
 }
