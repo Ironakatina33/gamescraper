@@ -11,6 +11,7 @@ type GameUpdate = {
   slug: string;
   source: string;
   article_url: string;
+  image_url?: string | null;
   summary?: string | null;
   published_at?: string | null;
 };
@@ -264,6 +265,13 @@ export default function UpdatesDashboard({ updates }: UpdatesDashboardProps) {
                 >
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0 lg:max-w-[70%]">
+                      {item.image_url ? (
+                        <img
+                          src={item.image_url}
+                          alt={item.title}
+                          className="mb-4 h-40 w-full rounded-xl border border-[#2a3b4f] object-cover"
+                        />
+                      ) : null}
                       <div className="mb-2 flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.15em] text-[#8b98a5]">
                         <span>{item.source}</span>
                         {item.isNew && (

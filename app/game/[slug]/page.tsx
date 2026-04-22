@@ -37,6 +37,13 @@ export default async function GamePage({ params }: Props) {
     <AppShell title={latest.title} subtitle={`Historique complet du jeu • ${latest.slug}`}>
       <div className="grid gap-4">
         <div className={`${ui.card} p-5`}>
+          {detail?.banner_image || latest.image_url ? (
+            <img
+              src={detail?.banner_image ?? latest.image_url}
+              alt={detail?.title ?? latest.title}
+              className="mb-4 h-56 w-full rounded-xl border border-[#2a3b4f] object-cover md:h-72"
+            />
+          ) : null}
           <p className="text-sm text-[#8b98a5]">Dernière mise à jour</p>
           <h2 className="mt-2 text-2xl font-bold text-white">
             {detail?.title ?? latest.title}

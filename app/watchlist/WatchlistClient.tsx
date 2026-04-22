@@ -10,6 +10,7 @@ type GameUpdate = {
   slug: string;
   source: string;
   article_url: string;
+  image_url?: string | null;
   summary?: string | null;
   published_at?: string | null;
 };
@@ -117,6 +118,13 @@ export default function WatchlistClient({ updates }: Props) {
         <div key={item.slug} className={`${ui.card} p-4`}>
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
+              {item.image_url ? (
+                <img
+                  src={item.image_url}
+                  alt={item.title}
+                  className="mb-3 h-28 w-full max-w-md rounded-lg border border-[#2a3b4f] object-cover"
+                />
+              ) : null}
               <div className="flex items-center gap-2">
                 <Link href={`/game/${item.slug}`} className="text-lg font-semibold text-white hover:text-[#66c0f4]">
                   {item.title}

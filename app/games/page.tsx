@@ -44,6 +44,13 @@ export default async function GamesPage() {
             href={`/game/${item.slug}`}
             className={`${ui.card} p-4 transition hover:-translate-y-0.5 hover:bg-[#1e2d40]`}
           >
+            {item.image_url ? (
+              <img
+                src={item.image_url}
+                alt={item.title}
+                className="mb-4 h-44 w-full rounded-xl border border-[#2a3b4f] object-cover"
+              />
+            ) : null}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-white">{item.title}</h2>
