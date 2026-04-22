@@ -43,10 +43,43 @@ function pickFirstAttr(
   return null;
 }
 
-function getLabelValue(text: string, label: string) {
-  const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const match = text.match(new RegExp(`${escaped}\\s*:\\s*(.+)$`, "i"));
-  return match?.[1]?.trim() ?? null;
+function parseDetailsFromText(text: string) {
+  const labels = [
+    "RELEASE NAME",
+    "RELEASE SIZE",
+    "DEVELOPER",
+    "PUBLISHER",
+    "RELEASE DATE",
+    "GENRE",
+    "ALL REVIEWS",
+    "REVIEWS",
+  ];
+  const result: Record<string, string> = {};
+
+  const escapedLabels = labels
+    .map((label) => label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .join("|");
+  const pairRegex = new RegExp(
+    `(${escapedLabels})\\s*:\\s*(.+?)(?=\\s+(?:${escapedLabels})\\s*:|$)`,
+    "gi"
+  );
+
+  let match = pairRegex.exec(text);
+  while (match) {
+    const label = match[1]?.trim().toLowerCase();
+    const value = clean(match[2]);
+    if (label && value) {
+      result[label] = value;
+    }
+    match = pairRegex.exec(text);
+  }
+
+  return result;
+}
+
+function looksLikeDetailsBlob(text: string | null) {
+  if (!text) return false;
+  return /release name\s*:|release size\s*:|developer\s*:|publisher\s*:/i.test(text);
 }
 
 export function parseGameDetail(html: string, articleUrl: string): ParsedGameDetail {
@@ -95,22 +128,7 @@ export function parseGameDetail(html: string, articleUrl: string): ParsedGameDet
     const text = $(el).text().replace(/\s+/g, " ").trim();
     if (!text) return;
 
-    const labels = [
-      "RELEASE NAME",
-      "RELEASE SIZE",
-      "DEVELOPER",
-      "PUBLISHER",
-      "RELEASE DATE",
-      "GENRE",
-      "ALL REVIEWS",
-    ];
-
-    for (const label of labels) {
-      const value = getLabelValue(text, label);
-      if (value) {
-        details[label.toLowerCase()] = value;
-      }
-    }
+    Object.assign(details, parseDetailsFromText(text));
 
     const strongLabel = $(el).find("strong").first().text().replace(":", "").trim();
     const rawAfterStrong = $(el).clone().find("strong").remove().end().text().trim();
@@ -127,7 +145,7 @@ export function parseGameDetail(html: string, articleUrl: string): ParsedGameDet
       const chunks: string[] = [];
       let node = $(el).next();
 
-      while (node.length && node[0]?.tagName !== "h3") {
+      while (node.length && !["h2", "h3", "h4"].includes(node[0]?.tagName ?? "")) {
         if (node[0]?.tagName === "ul") {
           node.find("li").each((__, li) => {
             const liText = $(li).text().replace(/\s+/g, " ").trim();
@@ -143,6 +161,22 @@ export function parseGameDetail(html: string, articleUrl: string): ParsedGameDet
       system_requirements = chunks.length ? chunks.join("\n") : null;
     }
   });
+
+  if (looksLikeDetailsBlob(about)) {
+    const parsedFromAbout = parseDetailsFromText(about ?? "");
+    Object.assign(details, parsedFromAbout);
+    about = null;
+  }
+
+  if (!about) {
+    const aboutCandidate = clean(
+      $('#post-content .post-body p')
+        .toArray()
+        .map((el) => $(el).text().replace(/\s+/g, " ").trim())
+        .find((text) => text.length > 80 && !looksLikeDetailsBlob(text))
+    );
+    about = aboutCandidate ?? null;
+  }
 
   return {
     article_url: articleUrl,
