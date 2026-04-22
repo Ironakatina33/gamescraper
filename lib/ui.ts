@@ -1,12 +1,12 @@
 export const ui = {
-  page: 'min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(102,192,244,0.14),transparent_32%),linear-gradient(180deg,#0b1118_0%,#0b121a_50%,#0a1017_100%)] text-[#d6dde5]',
+  page: 'min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(102,192,244,0.16),transparent_34%),radial-gradient(circle_at_80%_0%,rgba(57,130,189,0.14),transparent_32%),linear-gradient(180deg,#0b1118_0%,#0b121a_52%,#0a1017_100%)] text-[#d6dde5]',
   topbar:
     'sticky top-0 z-30 border-b border-[#243546] bg-[#0f1722]/85 backdrop-blur supports-[backdrop-filter]:bg-[#0f1722]/70',
   section: 'border-b border-[#1d2b3a] bg-[#0f1722]/70',
   container: 'mx-auto max-w-[1500px] px-5',
   pageContent: 'mx-auto max-w-[1500px] px-5 py-6',
 
-  card: 'rounded-xl border border-[#27384a] bg-[#172232]/95 shadow-[0_10px_35px_rgba(0,0,0,0.25)]',
+  card: 'rounded-2xl border border-[#27384a] bg-[#172232]/95 shadow-[0_10px_35px_rgba(0,0,0,0.25)]',
   cardSoft: 'rounded-xl border border-[#1e2d3d] bg-[#111b28]/95',
   rowHover: 'transition hover:bg-[#162334]',
 
@@ -34,6 +34,8 @@ export const ui = {
     'rounded-lg bg-[#66c0f4] px-3 py-2 text-sm font-semibold text-[#0b141b] shadow-[0_8px_20px_rgba(102,192,244,0.28)]',
   navInactive:
     'rounded-lg bg-[#1a2838] px-3 py-2 text-sm text-[#c7d5e0] transition hover:bg-[#22364a] hover:text-white',
+  heroBadge:
+    'inline-flex items-center gap-2 rounded-full border border-[#2c455d] bg-[#132131] px-3 py-1.5 text-xs uppercase tracking-[0.2em] text-[#7fcfff]',
 };
 
 export function cx(...classes: Array<string | false | null | undefined>) {

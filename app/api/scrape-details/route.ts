@@ -17,9 +17,10 @@ function getSupabaseAdminClient() {
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
+  const hasSecret = Boolean(process.env.CRON_SECRET);
   const expected = `Bearer ${process.env.CRON_SECRET}`;
 
-  if (authHeader !== expected) {
+  if (hasSecret && authHeader !== expected) {
     return NextResponse.json({ ok: false, error: "Non autorisé" }, { status: 401 });
   }
 
@@ -41,7 +42,13 @@ export async function GET(req: NextRequest) {
     for (const game of games ?? []) {
       try {
         const response = await fetch(game.article_url, {
-          headers: { "User-Agent": "Mozilla/5.0" },
+          headers: {
+            "User-Agent": "Mozilla/5.0",
+            Accept:
+              "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9,fr;q=0.8",
+            Referer: "https://game3rb.com/",
+          },
           cache: "no-store",
         });
 
@@ -56,6 +63,11 @@ export async function GET(req: NextRequest) {
 
         const html = await response.text();
         const parsed = parseGameDetail(html, game.article_url);
+        const hasMeaningfulData =
+          Boolean(parsed.about) ||
+          Boolean(parsed.banner_image) ||
+          parsed.screenshots.length > 0 ||
+          Boolean(parsed.system_requirements);
 
         const { error: upsertError } = await supabase
           .from("game_details")
@@ -79,6 +91,8 @@ export async function GET(req: NextRequest) {
         results.push({
           article_url: game.article_url,
           ok: true,
+          parsed_data: hasMeaningfulData,
+          screenshots: parsed.screenshots.length,
         });
       } catch (e) {
         results.push({
@@ -92,6 +106,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       processed: results.length,
+      success_count: results.filter((item) => item.ok).length,
+      parsed_data_count: results.filter((item) => item.ok && item.parsed_data).length,
       results,
     });
   } catch (e) {

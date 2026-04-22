@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode } from 'react';
 import { cx, ui } from '../../lib/ui';
+import BrandLogo from './BrandLogo';
 
 type AppShellProps = {
   title?: string;
@@ -28,31 +29,24 @@ export default function AppShell({
   children,
 }: AppShellProps) {
   const pathname = usePathname();
-  const [watchlistCount, setWatchlistCount] = useState(0);
-
-  useEffect(() => {
+  const watchlistCount = (() => {
+    if (typeof window === 'undefined') return 0;
     try {
       const raw = localStorage.getItem('watchlist-games');
       const items = raw ? (JSON.parse(raw) as string[]) : [];
-      setWatchlistCount(items.length);
+      return items.length;
     } catch {
-      setWatchlistCount(0);
+      return 0;
     }
-  }, [pathname]);
+  })();
 
   return (
     <main className={ui.page}>
       <header className={ui.topbar}>
         <div className={`${ui.container} py-4`}>
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <Link href="/" className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-md bg-[#66c0f4] shadow-[0_0_24px_rgba(102,192,244,0.45)]" />
-              <div>
-                <p className="text-[11px] uppercase tracking-[0.2em] text-[#66c0f4]">
-                  tracker
-                </p>
-                <p className="text-sm font-black text-white">GameScraper</p>
-              </div>
+            <Link href="/" className="inline-flex items-center">
+              <BrandLogo />
             </Link>
 
             <nav className="flex flex-wrap gap-2">

@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { ui } from '../../lib/ui';
 
 type GameUpdate = {
   id: string;
@@ -18,27 +19,24 @@ type Props = {
 };
 
 export default function WatchlistClient({ updates }: Props) {
-  const [watchlist, setWatchlist] = useState<string[]>([]);
-  const [seenBySlug, setSeenBySlug] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    const saved = localStorage.getItem('watchlist-games');
-    const seenRaw = localStorage.getItem('watchlist-seen-by-slug');
-    if (saved) {
-      try {
-        setWatchlist(JSON.parse(saved));
-      } catch {
-        setWatchlist([]);
-      }
+  const [watchlist, setWatchlist] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const saved = localStorage.getItem('watchlist-games');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
     }
-    if (seenRaw) {
-      try {
-        setSeenBySlug(JSON.parse(seenRaw));
-      } catch {
-        setSeenBySlug({});
-      }
+  });
+  const [seenBySlug, setSeenBySlug] = useState<Record<string, string>>(() => {
+    if (typeof window === 'undefined') return {};
+    try {
+      const seenRaw = localStorage.getItem('watchlist-seen-by-slug');
+      return seenRaw ? JSON.parse(seenRaw) : {};
+    } catch {
+      return {};
     }
-  }, []);
+  });
 
   const latestBySlug = useMemo(() => {
     return Array.from(
@@ -90,7 +88,7 @@ export default function WatchlistClient({ updates }: Props) {
 
   if (watched.length === 0) {
     return (
-      <div className="rounded-xl border border-[#263241] bg-[#182230] p-6 text-[#8b98a5]">
+      <div className={`${ui.card} p-6 text-[#8b98a5]`}>
         Aucun jeu suivi localement. Ajoute des jeux depuis la page des mises a jour.
       </div>
     );
@@ -98,7 +96,7 @@ export default function WatchlistClient({ updates }: Props) {
 
   return (
     <div className="grid gap-3">
-      <div className="flex items-center justify-between border border-[#263241] bg-[#111821] px-4 py-3">
+      <div className={`${ui.cardSoft} flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between`}>
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-[#8b98a5]">
             Nouveautes watchlist
@@ -109,14 +107,14 @@ export default function WatchlistClient({ updates }: Props) {
         </div>
         <button
           onClick={markAllAsSeen}
-          className="bg-[#2a475e] px-3 py-2 text-sm text-white hover:bg-[#3b6687]"
+          className={ui.buttonSecondary}
         >
           Tout marquer comme vu
         </button>
       </div>
 
       {watchedWithStatus.map((item) => (
-        <div key={item.slug} className="rounded-xl border border-[#263241] bg-[#182230] p-4">
+        <div key={item.slug} className={`${ui.card} p-4`}>
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
@@ -138,13 +136,13 @@ export default function WatchlistClient({ updates }: Props) {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => markAsSeen(item.slug, item.published_at)}
-                className="bg-[#223041] px-3 py-2 text-sm text-white hover:bg-[#2d4055]"
+                className={ui.buttonSecondary}
               >
                 Marquer vu
               </button>
               <button
                 onClick={() => remove(item.slug)}
-                className="bg-[#2a475e] px-3 py-2 text-sm text-white hover:bg-[#3b6687]"
+                className={ui.buttonWatchRemove}
               >
                 Retirer
               </button>

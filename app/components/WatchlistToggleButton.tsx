@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ui } from '../../lib/ui';
 
 type Props = {
@@ -17,11 +17,9 @@ function getSavedWatchlist() {
 }
 
 export default function WatchlistToggleButton({ slug }: Props) {
-  const [followed, setFollowed] = useState(false);
-
-  useEffect(() => {
-    setFollowed(getSavedWatchlist().includes(slug));
-  }, [slug]);
+  const [followed, setFollowed] = useState(() =>
+    typeof window === 'undefined' ? false : getSavedWatchlist().includes(slug)
+  );
 
   function toggle() {
     const current = getSavedWatchlist();

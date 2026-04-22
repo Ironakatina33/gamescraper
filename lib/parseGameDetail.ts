@@ -30,6 +30,19 @@ function cleanMediaUrl(url?: string | null) {
   return trimmed.replace(/&(amp;)?ssl=1/gi, "");
 }
 
+function pickFirstAttr(
+  $: cheerio.CheerioAPI,
+  selector: string,
+  attrs: string[] = ["src", "data-src", "data-lazy-src", "data-original"]
+) {
+  const node = $(selector).first();
+  for (const attr of attrs) {
+    const value = cleanMediaUrl(node.attr(attr));
+    if (value) return value;
+  }
+  return null;
+}
+
 function getLabelValue(text: string, label: string) {
   const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const match = text.match(new RegExp(`${escaped}\\s*:\\s*(.+)$`, "i"));
@@ -44,26 +57,33 @@ export function parseGameDetail(html: string, articleUrl: string): ParsedGameDet
     clean($("h1").first().text());
 
   const banner_image =
-    cleanMediaUrl($("#post-content .post-body > p img").first().attr("src")) ??
-    cleanMediaUrl($("#post-content .post-body img").first().attr("src")) ??
+    pickFirstAttr($, "#post-content .post-body > p img") ??
+    pickFirstAttr($, "#post-content .post-body img") ??
+    pickFirstAttr($, ".post-body img") ??
     null;
 
-  const screenshots = $(".slideshow-container .mySlides img, .slideshow-container img")
-    .map((_, el) => cleanMediaUrl($(el).attr("src")))
+  const screenshots = $(".slideshow-container .mySlides img, .slideshow-container img, .post-body figure img")
+    .map((_, el) => {
+      for (const attr of ["src", "data-src", "data-lazy-src", "data-original"]) {
+        const value = cleanMediaUrl($(el).attr(attr));
+        if (value) return value;
+      }
+      return null;
+    })
     .get()
     .filter((v): v is string => Boolean(v))
     .filter((v, idx, arr) => arr.indexOf(v) === idx);
 
   const trailer_url =
-    cleanMediaUrl($("video source").first().attr("src")) ??
-    cleanMediaUrl($("video").first().attr("src")) ??
-    $('iframe[src*="youtube"], iframe[src*="steam"]').first().attr("src") ??
+    pickFirstAttr($, "video source") ??
+    pickFirstAttr($, "video") ??
+    pickFirstAttr($, 'iframe[src*="youtube"], iframe[src*="steam"]', ["src"]) ??
     null;
 
   let about: string | null = null;
-  $("h3").each((_, el) => {
+  $("h2, h3, h4").each((_, el) => {
     const txt = $(el).text().trim().toLowerCase();
-    if (txt.includes("about this game")) {
+    if (txt.includes("about this game") || txt.includes("about game")) {
       const next = $(el).next();
       about = clean(next.text());
     }
@@ -71,7 +91,7 @@ export function parseGameDetail(html: string, articleUrl: string): ParsedGameDet
 
   const details: Record<string, string> = {};
 
-  $("#post-content .post-body p").each((_, el) => {
+  $("#post-content .post-body p, #post-content .post-body li").each((_, el) => {
     const text = $(el).text().replace(/\s+/g, " ").trim();
     if (!text) return;
 
@@ -91,11 +111,17 @@ export function parseGameDetail(html: string, articleUrl: string): ParsedGameDet
         details[label.toLowerCase()] = value;
       }
     }
+
+    const strongLabel = $(el).find("strong").first().text().replace(":", "").trim();
+    const rawAfterStrong = $(el).clone().find("strong").remove().end().text().trim();
+    if (strongLabel && rawAfterStrong) {
+      details[strongLabel.toLowerCase()] = clean(rawAfterStrong) ?? rawAfterStrong;
+    }
   });
 
   let system_requirements: string | null = null;
 
-  $("h3").each((_, el) => {
+  $("h2, h3, h4").each((_, el) => {
     const txt = $(el).text().trim().toLowerCase();
     if (txt.includes("system requirements")) {
       const chunks: string[] = [];
@@ -127,11 +153,11 @@ export function parseGameDetail(html: string, articleUrl: string): ParsedGameDet
     about,
     release_name: details["release name"] ?? null,
     release_size: details["release size"] ?? null,
-    developer: details["developer"] ?? null,
+    developer: details["developer"] ?? details["developers"] ?? null,
     publisher: details["publisher"] ?? null,
     release_date: details["release date"] ?? null,
     genre: details["genre"] ?? null,
-    reviews: details["all reviews"] ?? null,
+    reviews: details["all reviews"] ?? details["reviews"] ?? null,
     system_requirements,
   };
 }

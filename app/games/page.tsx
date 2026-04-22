@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import AppShell from '../components/AppShell';
 import { supabase } from '../../lib/supabase';
+import { ui } from '../../lib/ui';
 
 export default async function GamesPage() {
   const { data, error } = await supabase
@@ -21,24 +22,36 @@ export default async function GamesPage() {
   );
 
   return (
-    <AppShell title="Jeux" subtitle="Liste des jeux détectés">
-      <div className="grid gap-3">
+    <AppShell title="Jeux" subtitle="Catalogue deduit des dernieres mises a jour">
+      <div className="mb-5 grid gap-3 sm:grid-cols-3">
+        <div className={`${ui.card} p-4`}>
+          <p className="text-xs uppercase tracking-[0.2em] text-[#8b98a5]">Jeux uniques</p>
+          <p className="mt-2 text-2xl font-black text-white">{latestBySlug.length}</p>
+        </div>
+        <div className={`${ui.card} p-4`}>
+          <p className="text-xs uppercase tracking-[0.2em] text-[#8b98a5]">Entrees source</p>
+          <p className="mt-2 text-2xl font-black text-white">{(data ?? []).length}</p>
+        </div>
+        <div className={`${ui.card} p-4`}>
+          <p className="text-xs uppercase tracking-[0.2em] text-[#8b98a5]">Navigation</p>
+          <p className="mt-2 text-2xl font-black text-[#66c0f4]">/game/[slug]</p>
+        </div>
+      </div>
+      <div className="grid gap-3 md:grid-cols-2">
         {latestBySlug.map((item) => (
           <Link
             key={item.slug}
             href={`/game/${item.slug}`}
-            className="border border-[#263241] bg-[#182230] p-4 hover:bg-[#223041]"
+            className={`${ui.card} p-4 transition hover:-translate-y-0.5 hover:bg-[#1e2d40]`}
           >
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-white">{item.title}</h2>
                 <p className="mt-1 text-sm text-[#8b98a5]">{item.slug}</p>
               </div>
 
               <div className="text-sm text-[#8b98a5]">
-                {item.published_at
-                  ? new Date(item.published_at).toLocaleString()
-                  : 'Date inconnue'}
+                {item.published_at ? new Date(item.published_at).toLocaleString('fr-FR') : 'Date inconnue'}
               </div>
             </div>
           </Link>

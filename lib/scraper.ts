@@ -25,7 +25,15 @@ export function parseGenericHtml(
   config: typeof genericConfig
 ) {
   const $ = cheerio.load(html);
-  const results: any[] = [];
+  const results: Array<{
+    title: string;
+    slug: string;
+    source: string;
+    article_url: string;
+    image_url: string | null;
+    summary: string | null;
+    published_at: string;
+  }> = [];
 
   $(config.itemSelector).each((_, el) => {
     const title = $(el).find(config.titleSelector).first().text().trim();

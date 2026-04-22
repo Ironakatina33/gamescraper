@@ -53,15 +53,14 @@ function formatDate(value?: string | null) {
 export default function UpdatesDashboard({ updates }: UpdatesDashboardProps) {
   const [search, setSearch] = useState('');
   const [selectedSource, setSelectedSource] = useState('all');
-  const [watchlist, setWatchlist] = useState<string[]>([]);
-  const [seenBySlug, setSeenBySlug] = useState<Record<string, string>>({});
+  const [watchlist, setWatchlist] = useState<string[]>(() =>
+    typeof window === 'undefined' ? [] : getSavedWatchlist()
+  );
+  const [seenBySlug, setSeenBySlug] = useState<Record<string, string>>(() =>
+    typeof window === 'undefined' ? {} : getSeenBySlug()
+  );
   const [watchlistOnly, setWatchlistOnly] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-
-  useEffect(() => {
-    setWatchlist(getSavedWatchlist());
-    setSeenBySlug(getSeenBySlug());
-  }, []);
 
   useEffect(() => {
     saveWatchlist(watchlist);

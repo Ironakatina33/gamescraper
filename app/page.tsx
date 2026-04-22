@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import BrandLogo from './components/BrandLogo';
 export const metadata = {
   title: 'Accueil | GameScraper',
   description: 'Page d’accueil de GameScraper, le tracker de mises à jour de jeux.',
@@ -6,7 +7,7 @@ export const metadata = {
 export default function HomePage() {
   return (
     <main className="min-h-screen overflow-hidden bg-[#0b1118] text-white">
-      <div className="relative min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(102,192,244,0.18),transparent_30%),radial-gradient(circle_at_80%_20%,rgba(42,71,94,0.35),transparent_28%),linear-gradient(180deg,#0f141a_0%,#0c1218_45%,#0a0f14_100%)]">
+      <div className="relative min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(102,192,244,0.2),transparent_30%),radial-gradient(circle_at_82%_12%,rgba(42,71,94,0.3),transparent_28%),linear-gradient(180deg,#0f141a_0%,#0c1218_45%,#0a0f14_100%)]">
         <div className="pointer-events-none absolute inset-0 opacity-30">
           <div className="absolute left-[8%] top-[15%] h-40 w-40 rounded-full bg-[#66c0f4]/20 blur-3xl animate-pulse" />
           <div className="absolute right-[12%] top-[20%] h-56 w-56 rounded-full bg-[#2a475e]/30 blur-3xl animate-pulse" />
@@ -15,15 +16,7 @@ export default function HomePage() {
 
         <header className="relative z-10 border-b border-white/5 bg-[#10161d]/80 backdrop-blur">
           <div className="mx-auto flex max-w-[1300px] items-center justify-between px-6 py-5">
-            <div className="flex items-center gap-3">
-              <div className="h-9 w-9 bg-[#66c0f4] shadow-[0_0_30px_rgba(102,192,244,0.35)]" />
-              <div>
-                <p className="text-[11px] uppercase tracking-[0.2em] text-[#66c0f4]">
-                  tracker
-                </p>
-                <p className="text-sm font-bold text-white">GameScraper</p>
-              </div>
-            </div>
+            <BrandLogo />
 
             <div className="hidden md:flex items-center gap-3 text-sm">
               <Link
@@ -38,7 +31,7 @@ export default function HomePage() {
 
         <section className="relative z-10 mx-auto grid max-w-[1300px] gap-12 px-6 py-20 lg:grid-cols-[1.05fr_0.95fr] lg:py-28">
           <div className="self-center">
-            <div className="inline-flex items-center gap-2 border border-white/10 bg-white/5 px-3 py-1.5 text-xs uppercase tracking-[0.22em] text-[#66c0f4] backdrop-blur">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#2c455d] bg-[#132131] px-3 py-1.5 text-xs uppercase tracking-[0.22em] text-[#7fd0ff] backdrop-blur">
               <span className="h-2 w-2 rounded-full bg-[#66c0f4] animate-pulse" />
               Game update tracker
             </div>
