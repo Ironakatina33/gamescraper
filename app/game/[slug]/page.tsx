@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import AppShell from '../../components/AppShell';
 import WatchlistToggleButton from '../../components/WatchlistToggleButton';
 import { supabase } from '../../../lib/supabase';
+import { parseGameDetail, type ParsedGameDetail } from '../../../lib/parseGameDetail';
 import { ui } from '../../../lib/ui';
 
 type Props = {
@@ -27,11 +28,48 @@ export default async function GamePage({ params }: Props) {
   }
 
   const latest = data[0];
-  const { data: detail } = await supabase
+  const articleUrlNormalized = latest.article_url?.replace(/\/+$/, '');
+  const articleUrlWithSlash = `${articleUrlNormalized}/`;
+  const { data: detailRows } = await supabase
     .from('game_details')
     .select('*')
-    .eq('article_url', latest.article_url)
-    .maybeSingle();
+    .in('article_url', [latest.article_url, articleUrlNormalized, articleUrlWithSlash].filter(Boolean));
+
+  let detail = (detailRows ?? [])[0] as ParsedGameDetail | undefined;
+  const hasStructuredData = Boolean(
+    detail?.about ||
+      detail?.release_name ||
+      detail?.release_size ||
+      detail?.developer ||
+      detail?.publisher ||
+      detail?.release_date ||
+      detail?.genre ||
+      detail?.reviews ||
+      detail?.system_requirements ||
+      (detail?.screenshots?.length ?? 0) > 0
+  );
+
+  if (!hasStructuredData && latest.article_url) {
+    try {
+      const response = await fetch(latest.article_url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0',
+          Accept:
+            'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.9,fr;q=0.8',
+          Referer: 'https://game3rb.com/',
+        },
+        cache: 'no-store',
+      });
+
+      if (response.ok) {
+        const html = await response.text();
+        detail = parseGameDetail(html, latest.article_url);
+      }
+    } catch {
+      // Fallback silently to summary if source is unreachable.
+    }
+  }
 
   return (
     <AppShell title={latest.title} subtitle={`Historique complet du jeu • ${latest.slug}`}>

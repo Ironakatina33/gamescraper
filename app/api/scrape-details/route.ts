@@ -26,12 +26,23 @@ export async function GET(req: NextRequest) {
 
   try {
     const supabase = getSupabaseAdminClient();
+    const slug = req.nextUrl.searchParams.get("slug");
+    const limitParam = Number(req.nextUrl.searchParams.get("limit") ?? "120");
+    const limit = Number.isFinite(limitParam)
+      ? Math.max(1, Math.min(limitParam, 500))
+      : 120;
 
-    const { data: games, error } = await supabase
+    let query = supabase
       .from("game_updates")
       .select("article_url, slug, title")
       .order("published_at", { ascending: false })
-      .limit(20);
+      .limit(limit);
+
+    if (slug) {
+      query = query.eq("slug", slug);
+    }
+
+    const { data: games, error } = await query;
 
     if (error) {
       return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
@@ -105,6 +116,8 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       ok: true,
+      slug: slug ?? null,
+      limit,
       processed: results.length,
       success_count: results.filter((item) => item.ok).length,
       parsed_data_count: results.filter((item) => item.ok && item.parsed_data).length,
