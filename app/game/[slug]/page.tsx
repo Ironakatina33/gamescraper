@@ -133,7 +133,7 @@ export default async function GamePage({ params }: Props) {
           </section>
         )}
 
-        {detail?.screenshots?.length > 0 && (
+        {detail?.screenshots && detail.screenshots.length > 0 && (
           <section className={`${ui.card} p-5`}>
             <h3 className="text-xl font-bold text-white">Screenshots</h3>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
