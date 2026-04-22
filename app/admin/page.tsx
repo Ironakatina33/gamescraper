@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import AppShell from '../components/AppShell';
 import { ui } from '../../lib/ui';
-import { useToast } from '../components/ToastContext';
+import { ToastContext } from '../components/ToastContext';
 
 type GameUpdate = {
   id: string;
@@ -16,8 +16,22 @@ type GameUpdate = {
   published_at?: string | null;
 };
 
+// Safe toast hook that works even without ToastProvider
+function useSafeToast() {
+  const context = useContext(ToastContext);
+  if (!context) {
+    // Return no-op functions if no ToastProvider
+    return {
+      showSuccess: (msg: string) => console.log('Success:', msg),
+      showError: (msg: string) => console.error('Error:', msg),
+      showInfo: (msg: string) => console.log('Info:', msg),
+    };
+  }
+  return context;
+}
+
 export default function AdminPage() {
-  const { showSuccess, showError, showInfo } = useToast();
+  const { showSuccess, showError, showInfo } = useSafeToast();
   const [isLoading, setIsLoading] = useState(false);
   const [stats, setStats] = useState({ updates: 0, details: 0, sources: 0 });
   const [recentUpdates, setRecentUpdates] = useState<GameUpdate[]>([]);

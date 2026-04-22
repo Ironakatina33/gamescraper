@@ -12,7 +12,7 @@ interface ToastContextValue {
   removeToast: (id: string) => void;
 }
 
-const ToastContext = createContext<ToastContextValue | null>(null);
+export const ToastContext = createContext<ToastContextValue | null>(null);
 
 let toastIdCounter = 0;
 
