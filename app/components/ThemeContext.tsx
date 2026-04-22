@@ -30,18 +30,15 @@ export function ThemeProvider({ children, defaultTheme = 'dark' }: ThemeProvider
     }
   });
 
-  const mountedRef = useRef(false);
+  const [mounted, setMounted] = useState(false);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
-    mountedRef.current = true;
-    
-    return () => {
-      mountedRef.current = false;
-    };
+    setMounted(true);
   }, []);
 
   useEffect(() => {
-    if (!mountedRef.current) return;
+    if (!mounted) return;
     
     const root = document.documentElement;
     
@@ -58,7 +55,7 @@ export function ThemeProvider({ children, defaultTheme = 'dark' }: ThemeProvider
     } catch {
       // Ignore storage errors
     }
-  }, [theme]);
+  }, [theme, mounted]);
 
   const toggleTheme = () => {
     setThemeState((prev) => (prev === 'dark' ? 'light' : 'dark'));
@@ -67,6 +64,10 @@ export function ThemeProvider({ children, defaultTheme = 'dark' }: ThemeProvider
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
   };
+
+  if (!mounted) {
+    return <>{children}</>;
+  }
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>

@@ -3,10 +3,11 @@ import type { NextRequest } from 'next/server';
 
 // Admin secret from environment variable
 const ADMIN_SECRET = process.env.ADMIN_SECRET || '14102004';
+const CRON_SECRET = process.env.CRON_SECRET || '14102004';
 
 // Protected routes
 const PROTECTED_ROUTES = ['/admin'];
-const PROTECTED_API_ROUTES = ['/api/admin'];
+const PROTECTED_API_ROUTES = ['/api/admin', '/api/sync'];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -26,11 +27,14 @@ export function middleware(request: NextRequest) {
   const adminHeader = request.headers.get('x-admin-secret');
   // Method 3: Query param (for initial access)
   const adminParam = request.nextUrl.searchParams.get('secret');
+  // Method 4: Authorization header for /api/sync
+  const authHeader = request.headers.get('authorization');
 
   const isAuthenticated = 
     adminCookie === ADMIN_SECRET ||
     adminHeader === ADMIN_SECRET ||
-    adminParam === ADMIN_SECRET;
+    adminParam === ADMIN_SECRET ||
+    (pathname.startsWith('/api/sync') && authHeader === `Bearer ${CRON_SECRET}`);
 
   if (!isAuthenticated) {
     // For API routes, return 401
@@ -62,5 +66,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/api/admin/:path*'],
+  matcher: ['/admin/:path*', '/api/admin/:path*', '/api/sync'],
 };

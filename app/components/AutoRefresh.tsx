@@ -95,18 +95,18 @@ export function AutoRefreshToggle({
   };
 
   return (
-    <div className="flex flex-col gap-2 rounded-lg border border-[#1e2d3d] bg-[#111b28]/95 p-3">
+    <div className="flex flex-col gap-2 rounded-lg border border-[#222] bg-[#111] p-3">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium text-white">Auto-refresh</p>
-          <p className="text-xs text-[#8b98a5]">
+          <p className="text-xs text-[#666]">
             Actualisation toutes les {intervalMinutes} min
           </p>
         </div>
         <button
           onClick={onToggle}
           className={`relative h-6 w-11 rounded-full transition-colors ${
-            enabled ? 'bg-[#66c0f4]' : 'bg-[#1a2838]'
+            enabled ? 'bg-[#3b82f6]' : 'bg-[#333]'
           }`}
           aria-label={enabled ? 'Désactiver auto-refresh' : 'Activer auto-refresh'}
         >
@@ -118,7 +118,7 @@ export function AutoRefreshToggle({
         </button>
       </div>
       {enabled && (
-        <div className="flex justify-between text-xs text-[#6f7c88]">
+        <div className="flex justify-between text-xs text-[#666]">
           <span>Dernière: {formatTime(lastRefresh)}</span>
           <span>Prochaine: {formatTime(nextRefresh)}</span>
         </div>

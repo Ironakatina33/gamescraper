@@ -35,5 +35,9 @@ export default async function UpdatesPage() {
 
   const updates = (data ?? []) as GameUpdate[];
 
-  return <UpdatesDashboard updates={updates} />;
+  return (
+    <AppShell title="Toutes les mises à jour" subtitle="Dernières actualités de jeux">
+      <UpdatesDashboard updates={updates} />
+    </AppShell>
+  );
 }
