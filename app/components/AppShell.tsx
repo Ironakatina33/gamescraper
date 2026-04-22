@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { ReactNode } from 'react';
 import { cx, ui } from '../../lib/ui';
 import BrandLogo from './BrandLogo';
+import ThemeToggle from './ThemeToggle';
 
 type AppShellProps = {
   title?: string;
@@ -49,28 +50,31 @@ export default function AppShell({
               <BrandLogo />
             </Link>
 
-            <nav className="flex flex-wrap gap-2">
-              {navItems.map((item) => {
-                const active = isActiveLink(pathname, item.href);
+            <div className="flex items-center gap-2">
+              <nav className="flex flex-wrap gap-2">
+                {navItems.map((item) => {
+                  const active = isActiveLink(pathname, item.href);
 
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cx(active ? ui.navActive : ui.navInactive)}
-                  >
-                    <span className="inline-flex items-center gap-2">
-                      {item.label}
-                      {item.href === '/watchlist' && watchlistCount > 0 && (
-                        <span className="rounded bg-[#0b141b]/20 px-1.5 py-0.5 text-[11px] font-bold">
-                          {watchlistCount}
-                        </span>
-                      )}
-                    </span>
-                  </Link>
-                );
-              })}
-            </nav>
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={cx(active ? ui.navActive : ui.navInactive)}
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        {item.label}
+                        {item.href === '/watchlist' && watchlistCount > 0 && (
+                          <span className="rounded bg-[#0b141b]/20 px-1.5 py-0.5 text-[11px] font-bold">
+                            {watchlistCount}
+                          </span>
+                        )}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </nav>
+              <ThemeToggle />
+            </div>
           </div>
         </div>
       </header>

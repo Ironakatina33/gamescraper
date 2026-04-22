@@ -6,6 +6,7 @@ import { cx, ui } from '../../lib/ui';
 import AppShell from './AppShell';
 import { useToast } from './ToastContext';
 import { Pagination } from './Pagination';
+import { useAutoRefresh, AutoRefreshToggle } from './AutoRefresh';
 
 type GameUpdate = {
   id: string;
@@ -20,6 +21,7 @@ type GameUpdate = {
 
 type UpdatesDashboardProps = {
   updates: GameUpdate[];
+  onRefresh?: () => void;
 };
 
 function getSavedWatchlist(): string[] {
@@ -53,7 +55,7 @@ function formatDate(value?: string | null) {
   return new Date(value).toLocaleString('fr-FR');
 }
 
-export default function UpdatesDashboard({ updates }: UpdatesDashboardProps) {
+export default function UpdatesDashboard({ updates, onRefresh }: UpdatesDashboardProps) {
   const { showSuccess, showInfo } = useToast();
   const [search, setSearch] = useState('');
   const [selectedSource, setSelectedSource] = useState('all');
@@ -67,6 +69,22 @@ export default function UpdatesDashboard({ updates }: UpdatesDashboardProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  // Auto-refresh hook
+  const handleRefresh = useCallback(() => {
+    if (onRefresh) {
+      onRefresh();
+    } else {
+      // Fallback: reload page if no onRefresh provided
+      window.location.reload();
+    }
+  }, [onRefresh]);
+
+  const { enabled, toggleAutoRefresh, lastRefresh, nextRefresh } = useAutoRefresh({
+    onRefresh: handleRefresh,
+    intervalMinutes: 5,
+    enabled: true,
+  });
 
   useEffect(() => {
     saveWatchlist(watchlist);
@@ -233,6 +251,17 @@ export default function UpdatesDashboard({ updates }: UpdatesDashboardProps) {
                   </div>
                 )}
               </div>
+            </div>
+
+            <div>
+              <label className={ui.label}>Actualisation</label>
+              <AutoRefreshToggle
+                enabled={enabled}
+                onToggle={toggleAutoRefresh}
+                lastRefresh={lastRefresh}
+                nextRefresh={nextRefresh}
+                intervalMinutes={5}
+              />
             </div>
 
             <div>
