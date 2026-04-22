@@ -1,4 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as cheerio from "cheerio";
+
+export interface DownloadLink {
+  url: string;
+  text: string;
+  host?: string;
+}
 
 export type ParsedGameDetail = {
   article_url: string;
@@ -15,6 +22,7 @@ export type ParsedGameDetail = {
   genre: string | null;
   reviews: string | null;
   system_requirements: string | null;
+  download_links: DownloadLink[];
 };
 
 function clean(text?: string | null) {
@@ -178,6 +186,69 @@ export function parseGameDetail(html: string, articleUrl: string): ParsedGameDet
     about = aboutCandidate ?? null;
   }
 
+  // Extract download links
+  const download_links: DownloadLink[] = [];
+  const seenUrls = new Set<string>();
+
+  // Common download hosts patterns
+  const downloadHosts = [
+    'mega.nz', 'mega.co.nz', 'google.com', 'drive.google.com', 'mediafire.com',
+    'zippyshare.com', 'uploadhaven.com', 'gofile.io', '1fichier.com',
+    'rapidgator.net', 'uptobox.com', 'uploaded.net', 'filefactory.com',
+    'turbobit.net', 'nitroflare.com', 'filerio.in', 'share-online.biz',
+    'katfile.com', 'dl.free.fr', 'transfer.sh', 'we.tl', 'wetransfer.com',
+    'pixeldrain.com', 'bowfile.com', 'megaup.net', 'drop.download',
+    'anonfiles.com', 'bayfiles.com', '1drv.ms', 'onedrive.live.com'
+  ];
+
+  // Look for links in various contexts
+  $('#post-content .post-body a, .post-body a, .download-links a, .links a').each((_, el) => {
+    const href = $(el).attr('href');
+    const text = $(el).text().trim();
+
+    if (!href || seenUrls.has(href)) return;
+
+    const lowerHref = href.toLowerCase();
+    const lowerText = text.toLowerCase();
+
+    // Check if it's a download link
+    const isDownloadHost = downloadHosts.some(host => lowerHref.includes(host));
+    const isDownloadText = /download|part|mirror|link|mega|drive|mediafire|zippy|gofile/i.test(lowerText);
+    const isDirectLink = /\.zip$|\.rar$|\.7z$|\.iso$|\.exe$|\.dmg$|\.pkg$/i.test(lowerHref);
+
+    if (isDownloadHost || isDownloadText || isDirectLink) {
+      seenUrls.add(href);
+
+      // Determine host name
+      let host: string | undefined;
+      for (const h of downloadHosts) {
+        if (lowerHref.includes(h)) {
+          host = h.replace('.com', '').replace('.net', '').replace('.nz', '').replace('.io', '').replace('.co', '');
+          break;
+        }
+      }
+
+      download_links.push({
+        url: href,
+        text: text || 'Download Link',
+        host: host || 'External Link'
+      });
+    }
+  });
+
+  // Also look for buttons or styled links that might be download buttons
+  $('.download-button, .btn-download, [class*="download"], [class*="mega"], [class*="drive"]').each((_, el) => {
+    const link = $(el).closest('a').attr('href') || $(el).find('a').attr('href');
+    if (link && !seenUrls.has(link)) {
+      seenUrls.add(link);
+      download_links.push({
+        url: link,
+        text: $(el).text().trim() || 'Download',
+        host: 'Download'
+      });
+    }
+  });
+
   return {
     article_url: articleUrl,
     title,
@@ -193,5 +264,6 @@ export function parseGameDetail(html: string, articleUrl: string): ParsedGameDet
     genre: details["genre"] ?? null,
     reviews: details["all reviews"] ?? details["reviews"] ?? null,
     system_requirements,
+    download_links,
   };
 }

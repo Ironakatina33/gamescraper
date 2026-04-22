@@ -43,23 +43,23 @@ export function useAutoRefresh({
 
   useEffect(() => {
     if (!enabled) {
-      setNextRefresh(null);
+      setTimeout(() => setNextRefresh(null), 0);
       return;
     }
 
     const intervalMs = intervalMinutes * 60 * 1000;
 
-    const doRefresh = () => {
-      onRefresh();
-      const now = new Date();
-      setLastRefresh(now);
-      setNextRefresh(new Date(now.getTime() + intervalMs));
-      showInfo('Données actualisées automatiquement');
-    };
-
     // Set initial next refresh time
     const now = new Date();
-    setNextRefresh(new Date(now.getTime() + intervalMs));
+    setTimeout(() => setNextRefresh(new Date(now.getTime() + intervalMs)), 0);
+
+    const doRefresh = () => {
+      onRefresh();
+      const refreshNow = new Date();
+      setLastRefresh(refreshNow);
+      setNextRefresh(new Date(refreshNow.getTime() + intervalMs));
+      showInfo('Données actualisées automatiquement');
+    };
 
     const interval = setInterval(doRefresh, intervalMs);
 
