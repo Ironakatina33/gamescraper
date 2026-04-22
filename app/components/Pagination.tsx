@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { cx, ui } from '../../lib/ui';
+import { useState, useEffect, useRef } from 'react';
+import { cx } from '../../lib/ui';
 
 interface PaginationProps {
   currentPage: number;
@@ -135,9 +135,14 @@ export function usePagination<T>({
 
   const totalPages = Math.ceil(items.length / itemsPerPage);
 
-  // Reset to page 1 when items change
+  // Ref to track items length for page reset
+  const itemsLengthRef = useRef(items.length);
+  
   useEffect(() => {
-    setCurrentPage(1);
+    if (itemsLengthRef.current !== items.length) {
+      setCurrentPage(1);
+      itemsLengthRef.current = items.length;
+    }
   }, [items.length]);
 
   const paginatedItems = items.slice(

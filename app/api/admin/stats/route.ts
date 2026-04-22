@@ -49,7 +49,7 @@ export async function GET() {
       sources: uniqueSources.size,
       recent: recentData || [],
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

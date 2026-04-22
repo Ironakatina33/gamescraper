@@ -22,14 +22,14 @@ export default function NotFoundPage() {
           <h1 className="text-4xl font-black text-[#66c0f4] mb-4">404</h1>
           <h2 className="text-xl font-bold text-white mb-2">Page introuvable</h2>
           <p className="text-[#c7d5e0] mb-6">
-            Le contenu demandé n'existe pas ou a été déplacé.
+            Le contenu demandé n&apos;existe pas ou a été déplacé.
           </p>
 
           <Link 
             href="/" 
             className="inline-block rounded-lg bg-[#66c0f4] px-6 py-3 text-sm font-bold text-[#0b141b] transition hover:bg-[#8fd3ff]"
           >
-            Retour à l'accueil
+            Retour à l&apos;accueil
           </Link>
         </div>
       </main>

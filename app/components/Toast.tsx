@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { cx, ui } from '../../lib/ui';
+import { cx } from '../../lib/ui';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
 

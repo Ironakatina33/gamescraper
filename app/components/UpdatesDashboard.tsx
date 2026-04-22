@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { cx, ui } from '../../lib/ui';
 import AppShell from './AppShell';
 import { useToast } from './ToastContext';
@@ -70,6 +70,17 @@ export default function UpdatesDashboard({ updates, onRefresh }: UpdatesDashboar
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  // Ref to track filter changes for page reset
+  const filterKey = useMemo(() => `${search}-${selectedSource}-${watchlistOnly}`, [search, selectedSource, watchlistOnly]);
+  const prevFilterKey = useRef(filterKey);
+
+  useEffect(() => {
+    if (prevFilterKey.current !== filterKey) {
+      setCurrentPage(1);
+      prevFilterKey.current = filterKey;
+    }
+  }, [filterKey]);
+
   // Auto-refresh hook
   const handleRefresh = useCallback(() => {
     if (onRefresh) {
@@ -134,11 +145,6 @@ export default function UpdatesDashboard({ updates, onRefresh }: UpdatesDashboar
     const start = (currentPage - 1) * itemsPerPage;
     return filteredUpdates.slice(start, start + itemsPerPage);
   }, [filteredUpdates, currentPage]);
-
-  // Reset page when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [search, selectedSource, watchlistOnly]);
 
   const suggestions = useMemo(() => {
     const value = search.trim().toLowerCase();

@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 
 type Theme = 'dark' | 'light';
 
@@ -30,14 +30,18 @@ export function ThemeProvider({ children, defaultTheme = 'dark' }: ThemeProvider
     }
   });
 
-  const [mounted, setMounted] = useState(false);
+  const mountedRef = useRef(false);
 
   useEffect(() => {
-    setMounted(true);
+    mountedRef.current = true;
+    
+    return () => {
+      mountedRef.current = false;
+    };
   }, []);
 
   useEffect(() => {
-    if (!mounted) return;
+    if (!mountedRef.current) return;
     
     const root = document.documentElement;
     
@@ -54,7 +58,7 @@ export function ThemeProvider({ children, defaultTheme = 'dark' }: ThemeProvider
     } catch {
       // Ignore storage errors
     }
-  }, [theme, mounted]);
+  }, [theme]);
 
   const toggleTheme = () => {
     setThemeState((prev) => (prev === 'dark' ? 'light' : 'dark'));
@@ -63,11 +67,6 @@ export function ThemeProvider({ children, defaultTheme = 'dark' }: ThemeProvider
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
   };
-
-  // Prevent hydration mismatch
-  if (!mounted) {
-    return <>{children}</>;
-  }
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>

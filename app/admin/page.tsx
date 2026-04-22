@@ -4,12 +4,21 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 // Standalone admin page without AppShell to avoid ThemeProvider issues during build
+
+interface RecentUpdate {
+  id: string;
+  title: string;
+  source: string;
+  slug: string;
+  article_url: string;
+}
+
 export default function AdminPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error'>('success');
   const [stats, setStats] = useState({ updates: 0, details: 0, sources: 0 });
-  const [recentUpdates, setRecentUpdates] = useState<any[]>([]);
+  const [recentUpdates, setRecentUpdates] = useState<RecentUpdate[]>([]);
   const [activeTab, setActiveTab] = useState<'actions' | 'stats' | 'recent'>('actions');
 
   // UI classes inline to avoid dependency issues
@@ -35,8 +44,8 @@ export default function AdminPage() {
         });
         setRecentUpdates(data.recent || []);
       }
-    } catch (error) {
-      console.error('Erreur de chargement:', error);
+    } catch {
+      console.error('Erreur de chargement');
     }
   }
 
@@ -59,7 +68,7 @@ export default function AdminPage() {
       } else {
         showMessage(data.error || 'Erreur lors de l\'ajout', 'error');
       }
-    } catch (error) {
+    } catch {
       showMessage('Erreur de connexion', 'error');
     } finally {
       setIsLoading(false);
@@ -83,7 +92,7 @@ export default function AdminPage() {
       } else {
         showMessage(data.error || 'Erreur de scraping', 'error');
       }
-    } catch (error) {
+    } catch {
       showMessage('Erreur de connexion', 'error');
     } finally {
       setIsLoading(false);
@@ -106,7 +115,7 @@ export default function AdminPage() {
       } else {
         showMessage('Erreur lors du scraping des détails', 'error');
       }
-    } catch (error) {
+    } catch {
       showMessage('Erreur de connexion', 'error');
     } finally {
       setIsLoading(false);
@@ -123,7 +132,7 @@ export default function AdminPage() {
         localStorage.removeItem('gamescraper-theme');
       }
       showMessage('Cache local effacé');
-    } catch (error) {
+    } catch {
       showMessage('Erreur lors de l\'effacement du cache', 'error');
     } finally {
       setIsLoading(false);
