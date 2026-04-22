@@ -6,6 +6,7 @@ import { ReactNode } from 'react';
 import { cx, ui } from '../../lib/ui';
 import BrandLogo from './BrandLogo';
 import ThemeToggle from './ThemeToggle';
+import Footer from './Footer';
 
 type AppShellProps = {
   title?: string;
@@ -89,6 +90,7 @@ export default function AppShell({
       )}
 
       <section className={ui.pageContent}>{children}</section>
+      <Footer />
     </main>
   );
 }

@@ -81,7 +81,7 @@ export default function AdminPage() {
     try {
       const response = await fetch('/api/sync', {
         headers: {
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_CRON_SECRET || 'demo-secret'}`
+          'Authorization': `Bearer ${process.env.CRON_SECRET || '14102004'}`
         }
       });
       const data = await response.json();
