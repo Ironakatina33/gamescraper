@@ -1,9 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { cx, ui } from '../../lib/ui';
 import AppShell from './AppShell';
+import { useToast } from './ToastContext';
+import { Pagination } from './Pagination';
 
 type GameUpdate = {
   id: string;
@@ -52,6 +54,7 @@ function formatDate(value?: string | null) {
 }
 
 export default function UpdatesDashboard({ updates }: UpdatesDashboardProps) {
+  const { showSuccess, showInfo } = useToast();
   const [search, setSearch] = useState('');
   const [selectedSource, setSelectedSource] = useState('all');
   const [watchlist, setWatchlist] = useState<string[]>(() =>
@@ -62,6 +65,8 @@ export default function UpdatesDashboard({ updates }: UpdatesDashboardProps) {
   );
   const [watchlistOnly, setWatchlistOnly] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     saveWatchlist(watchlist);
@@ -105,6 +110,18 @@ export default function UpdatesDashboard({ updates }: UpdatesDashboardProps) {
     });
   }, [withStatus, search, selectedSource, watchlistOnly]);
 
+  // Pagination
+  const totalPages = Math.ceil(filteredUpdates.length / itemsPerPage);
+  const paginatedUpdates = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredUpdates.slice(start, start + itemsPerPage);
+  }, [filteredUpdates, currentPage]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, selectedSource, watchlistOnly]);
+
   const suggestions = useMemo(() => {
     const value = search.trim().toLowerCase();
     if (!value) return [];
@@ -127,11 +144,13 @@ export default function UpdatesDashboard({ updates }: UpdatesDashboardProps) {
     return watchlist.includes(slug);
   }
 
-  function toggleWatchlist(slug: string) {
+  function toggleWatchlist(slug: string, title: string) {
     if (watchlist.includes(slug)) {
       setWatchlist(watchlist.filter((item) => item !== slug));
+      showInfo(`${title} retiré de la watchlist`);
     } else {
       setWatchlist([...watchlist, slug]);
+      showSuccess(`${title} ajouté à la watchlist`);
     }
   }
 
@@ -139,17 +158,21 @@ export default function UpdatesDashboard({ updates }: UpdatesDashboardProps) {
     const next = { ...seenBySlug, [slug]: publishedAt ?? new Date().toISOString() };
     setSeenBySlug(next);
     saveSeenBySlug(next);
+    showInfo('Marqué comme lu');
   }
 
   function markAllAsSeen() {
     const next = { ...seenBySlug };
+    let count = 0;
     for (const item of withStatus) {
-      if (item.isFollowed) {
+      if (item.isFollowed && item.isNew) {
         next[item.slug] = item.published_at ?? new Date().toISOString();
+        count++;
       }
     }
     setSeenBySlug(next);
     saveSeenBySlug(next);
+    showSuccess(`${count} mise${count > 1 ? 's' : ''} à jour marquée${count > 1 ? 's' : ''} comme lue${count > 1 ? 's' : ''}`);
   }
 
   return (
@@ -250,12 +273,12 @@ export default function UpdatesDashboard({ updates }: UpdatesDashboardProps) {
         </aside>
 
         <section className="grid gap-4">
-          {filteredUpdates.length === 0 ? (
+          {paginatedUpdates.length === 0 ? (
             <div className={`${ui.cardSoft} p-6 text-sm text-[#8b98a5]`}>
               Aucun résultat trouvé.
             </div>
           ) : (
-            filteredUpdates.map((item) => {
+            paginatedUpdates.map((item) => {
               const followed = isInWatchlist(item.slug);
 
               return (
@@ -308,10 +331,10 @@ export default function UpdatesDashboard({ updates }: UpdatesDashboardProps) {
                         Ouvrir la source
                       </a>
                       <button
-                        onClick={() => toggleWatchlist(item.slug)}
+                        onClick={() => toggleWatchlist(item.slug, item.title)}
                         className={followed ? ui.buttonWatchRemove : ui.buttonWatchAdd}
                       >
-                        {followed ? 'Retirer de ma watchlist' : 'Ajouter a ma watchlist'}
+                        {followed ? 'Retirer de ma watchlist' : 'Ajouter à ma watchlist'}
                       </button>
                       {followed && (
                         <button
@@ -326,6 +349,17 @@ export default function UpdatesDashboard({ updates }: UpdatesDashboardProps) {
                 </div>
               );
             })
+          )}
+          {filteredUpdates.length > 0 && (
+            <div className="mt-4">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                itemsPerPage={itemsPerPage}
+                totalItems={filteredUpdates.length}
+              />
+            </div>
           )}
         </section>
       </div>
