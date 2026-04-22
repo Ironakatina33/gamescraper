@@ -1,17 +1,9 @@
 'use client';
 
-import { useContext } from 'react';
-import { ThemeContext } from './ThemeContext';
+import { useTheme } from './ThemeContext';
 
 export default function ThemeToggle() {
-  const context = useContext(ThemeContext);
-  
-  // If no ThemeProvider (e.g., in 404 page during static generation), don't render
-  if (!context) {
-    return null;
-  }
-  
-  const { theme, toggleTheme } = context;
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <button
