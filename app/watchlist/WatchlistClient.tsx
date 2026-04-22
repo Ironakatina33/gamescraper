@@ -47,8 +47,13 @@ export default function WatchlistClient({ updates }: Props) {
   }, [updates]);
 
   const watched = latestBySlug.filter((item) => watchlist.includes(item.slug));
+  const sortedWatched = [...watched].sort((a, b) => {
+    const aTime = a.published_at ? new Date(a.published_at).getTime() : 0;
+    const bTime = b.published_at ? new Date(b.published_at).getTime() : 0;
+    return bTime - aTime;
+  });
 
-  const watchedWithStatus = watched.map((item) => {
+  const watchedWithStatus = sortedWatched.map((item) => {
     const seenAt = seenBySlug[item.slug];
     const publishedAt = item.published_at ?? null;
     const isNew = Boolean(
@@ -85,8 +90,8 @@ export default function WatchlistClient({ updates }: Props) {
 
   if (watched.length === 0) {
     return (
-      <div className="border border-[#263241] bg-[#182230] p-5 text-[#8b98a5]">
-        Aucun jeu suivi localement.
+      <div className="rounded-xl border border-[#263241] bg-[#182230] p-6 text-[#8b98a5]">
+        Aucun jeu suivi localement. Ajoute des jeux depuis la page des mises a jour.
       </div>
     );
   }
@@ -111,9 +116,9 @@ export default function WatchlistClient({ updates }: Props) {
       </div>
 
       {watchedWithStatus.map((item) => (
-        <div key={item.slug} className="border border-[#263241] bg-[#182230] p-4">
-          <div className="flex items-center justify-between gap-4">
-            <div>
+        <div key={item.slug} className="rounded-xl border border-[#263241] bg-[#182230] p-4">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <Link href={`/game/${item.slug}`} className="text-lg font-semibold text-white hover:text-[#66c0f4]">
                   {item.title}
@@ -125,6 +130,9 @@ export default function WatchlistClient({ updates }: Props) {
                 )}
               </div>
               <p className="mt-1 text-sm text-[#8b98a5]">{item.slug}</p>
+              <p className="mt-1 text-xs uppercase tracking-[0.15em] text-[#6f7c88]">
+                {item.source}
+              </p>
             </div>
 
             <div className="flex items-center gap-2">

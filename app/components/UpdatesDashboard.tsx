@@ -32,19 +32,35 @@ function saveWatchlist(slugs: string[]) {
   localStorage.setItem('watchlist-games', JSON.stringify(slugs));
 }
 
+function getSeenBySlug(): Record<string, string> {
+  try {
+    const raw = localStorage.getItem('watchlist-seen-by-slug');
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveSeenBySlug(values: Record<string, string>) {
+  localStorage.setItem('watchlist-seen-by-slug', JSON.stringify(values));
+}
+
 function formatDate(value?: string | null) {
   if (!value) return 'Date inconnue';
-  return new Date(value).toLocaleString();
+  return new Date(value).toLocaleString('fr-FR');
 }
 
 export default function UpdatesDashboard({ updates }: UpdatesDashboardProps) {
   const [search, setSearch] = useState('');
   const [selectedSource, setSelectedSource] = useState('all');
   const [watchlist, setWatchlist] = useState<string[]>([]);
+  const [seenBySlug, setSeenBySlug] = useState<Record<string, string>>({});
+  const [watchlistOnly, setWatchlistOnly] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
     setWatchlist(getSavedWatchlist());
+    setSeenBySlug(getSeenBySlug());
   }, []);
 
   useEffect(() => {
@@ -55,10 +71,24 @@ export default function UpdatesDashboard({ updates }: UpdatesDashboardProps) {
     return Array.from(new Set(updates.map((item) => item.source))).sort();
   }, [updates]);
 
+  const withStatus = useMemo(() => {
+    return updates.map((item) => {
+      const isFollowed = watchlist.includes(item.slug);
+      const seenAt = seenBySlug[item.slug];
+      const isNew = Boolean(
+        isFollowed &&
+          item.published_at &&
+          (!seenAt ||
+            new Date(item.published_at).getTime() > new Date(seenAt).getTime())
+      );
+      return { ...item, isFollowed, isNew };
+    });
+  }, [updates, watchlist, seenBySlug]);
+
   const filteredUpdates = useMemo(() => {
     const value = search.trim().toLowerCase();
 
-    return updates.filter((item) => {
+    return withStatus.filter((item) => {
       const matchesSearch =
         !value ||
         item.title.toLowerCase().includes(value) ||
@@ -69,22 +99,29 @@ export default function UpdatesDashboard({ updates }: UpdatesDashboardProps) {
       const matchesSource =
         selectedSource === 'all' || item.source === selectedSource;
 
-      return matchesSearch && matchesSource;
+      const matchesWatchlist = !watchlistOnly || item.isFollowed;
+
+      return matchesSearch && matchesSource && matchesWatchlist;
     });
-  }, [updates, search, selectedSource]);
+  }, [withStatus, search, selectedSource, watchlistOnly]);
 
   const suggestions = useMemo(() => {
     const value = search.trim().toLowerCase();
     if (!value) return [];
 
     const uniqueGames = Array.from(
-      new Map(updates.map((item) => [item.slug, item])).values()
+      new Map(withStatus.map((item) => [item.slug, item])).values()
     );
 
     return uniqueGames
       .filter((item) => item.title.toLowerCase().includes(value))
       .slice(0, 5);
-  }, [updates, search]);
+  }, [withStatus, search]);
+
+  const newCount = useMemo(
+    () => withStatus.filter((item) => item.isNew).length,
+    [withStatus]
+  );
 
   function isInWatchlist(slug: string) {
     return watchlist.includes(slug);
@@ -98,12 +135,44 @@ export default function UpdatesDashboard({ updates }: UpdatesDashboardProps) {
     }
   }
 
+  function markAsSeen(slug: string, publishedAt?: string | null) {
+    const next = { ...seenBySlug, [slug]: publishedAt ?? new Date().toISOString() };
+    setSeenBySlug(next);
+    saveSeenBySlug(next);
+  }
+
+  function markAllAsSeen() {
+    const next = { ...seenBySlug };
+    for (const item of withStatus) {
+      if (item.isFollowed) {
+        next[item.slug] = item.published_at ?? new Date().toISOString();
+      }
+    }
+    setSeenBySlug(next);
+    saveSeenBySlug(next);
+  }
+
   return (
     <AppShell
       title="Toutes les mises à jour"
       subtitle="Cherche un jeu, ouvre sa page, ou ajoute-le à ta watchlist"
     >
-      <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
+      <div className="mb-5 grid gap-3 sm:grid-cols-3">
+        <div className={`${ui.card} p-4`}>
+          <p className="text-xs uppercase tracking-[0.2em] text-[#8b98a5]">Updates</p>
+          <p className="mt-2 text-2xl font-black text-white">{updates.length}</p>
+        </div>
+        <div className={`${ui.card} p-4`}>
+          <p className="text-xs uppercase tracking-[0.2em] text-[#8b98a5]">Watchlist</p>
+          <p className="mt-2 text-2xl font-black text-white">{watchlist.length}</p>
+        </div>
+        <div className={`${ui.card} p-4`}>
+          <p className="text-xs uppercase tracking-[0.2em] text-[#8b98a5]">Non lues</p>
+          <p className="mt-2 text-2xl font-black text-[#66c0f4]">{newCount}</p>
+        </div>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
         <aside className={`${ui.cardSoft} p-4`}>
           <h2 className={ui.sectionTitle}>Filtres</h2>
 
@@ -161,31 +230,28 @@ export default function UpdatesDashboard({ updates }: UpdatesDashboardProps) {
             </div>
 
             <div className={`${ui.card} p-3`}>
-              <p className="text-xs text-[#8b98a5]">Résultats</p>
+              <p className="text-xs text-[#8b98a5]">Résultats filtrés</p>
               <p className="mt-1 text-xl font-bold text-white">
                 {filteredUpdates.length}
               </p>
             </div>
 
-            <div className={`${ui.card} p-3`}>
-              <p className="text-xs text-[#8b98a5]">Jeux suivis</p>
-              <p className="mt-1 text-xl font-bold text-white">
-                {watchlist.length}
-              </p>
-            </div>
+            <button
+              onClick={() => setWatchlistOnly((v) => !v)}
+              className={watchlistOnly ? ui.buttonWatchRemove : ui.buttonSecondary}
+            >
+              {watchlistOnly ? 'Afficher toutes les updates' : 'Voir seulement ma watchlist'}
+            </button>
+
+            <button onClick={markAllAsSeen} className={ui.buttonSecondary}>
+              Marquer ma watchlist comme lue
+            </button>
           </div>
         </aside>
 
-        <section className={ui.cardSoft}>
-          <div className="grid grid-cols-[2.2fr_1fr_170px_240px] border-b border-[#1d2731] bg-[#121a24] px-4 py-3 text-xs uppercase tracking-[0.12em] text-[#6f7c88]">
-            <div>Jeu</div>
-            <div>Source</div>
-            <div>Date</div>
-            <div>Actions</div>
-          </div>
-
+        <section className="grid gap-4">
           {filteredUpdates.length === 0 ? (
-            <div className="p-6 text-sm text-[#8b98a5]">
+            <div className={`${ui.cardSoft} p-6 text-sm text-[#8b98a5]`}>
               Aucun résultat trouvé.
             </div>
           ) : (
@@ -195,56 +261,60 @@ export default function UpdatesDashboard({ updates }: UpdatesDashboardProps) {
               return (
                 <div
                   key={item.id}
-                  className={cx(
-                    'grid grid-cols-[2.2fr_1fr_170px_240px] items-start border-b border-[#1d2731] px-4 py-4',
-                    ui.rowHover
-                  )}
+                  className={cx(ui.card, 'p-5')}
                 >
-                  <div className="pr-4">
-                    <Link
-                      href={`/game/${item.slug}`}
-                      className="inline-block text-base font-semibold text-white underline-offset-4 hover:text-[#66c0f4] hover:underline"
-                    >
-                      Voir la page du jeu : {item.title}
-                    </Link>
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="min-w-0 lg:max-w-[70%]">
+                      <div className="mb-2 flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.15em] text-[#8b98a5]">
+                        <span>{item.source}</span>
+                        {item.isNew && (
+                          <span className="rounded bg-[#66c0f4] px-2 py-1 text-[10px] font-bold text-[#0b141b]">
+                            NEW
+                          </span>
+                        )}
+                      </div>
+                      <Link
+                        href={`/game/${item.slug}`}
+                        className="inline-block text-xl font-black text-white hover:text-[#66c0f4]"
+                      >
+                        {item.title}
+                      </Link>
+                      <p className="mt-1 text-xs text-[#6f7c88]">{item.slug}</p>
+                      <p className="mt-3 text-sm leading-6 text-[#aeb8c2]">
+                        {item.summary || 'Aucun résumé disponible.'}
+                      </p>
+                      <p className="mt-3 text-xs text-[#8b98a5]">
+                        {formatDate(item.published_at)}
+                      </p>
+                    </div>
 
-                    <p className="mt-1 text-xs text-[#6f7c88]">{item.slug}</p>
-
-                    <p className="mt-2 text-sm leading-6 text-[#aeb8c2]">
-                      {item.summary || 'Aucun résumé disponible.'}
-                    </p>
-                  </div>
-
-                  <div className="pr-4 text-sm text-[#c7d5e0]">{item.source}</div>
-
-                  <div className="pr-4 text-sm text-[#8b98a5]">
-                    {formatDate(item.published_at)}
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <Link href={`/game/${item.slug}`} className={ui.buttonPrimary}>
-                      Voir la page du jeu
-                    </Link>
-
-                    <a
-                      href={item.article_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className={ui.buttonSecondary}
-                    >
-                      Ouvrir la source externe
-                    </a>
-
-                    <button
-                      onClick={() => toggleWatchlist(item.slug)}
-                      className={
-                        followed ? ui.buttonWatchRemove : ui.buttonWatchAdd
-                      }
-                    >
-                      {followed
-                        ? 'Retirer de ma watchlist'
-                        : 'Ajouter à ma watchlist'}
-                    </button>
+                    <div className="flex w-full flex-col gap-2 lg:w-[230px]">
+                      <Link href={`/game/${item.slug}`} className={ui.buttonPrimary}>
+                        Voir la fiche
+                      </Link>
+                      <a
+                        href={item.article_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={ui.buttonSecondary}
+                      >
+                        Ouvrir la source
+                      </a>
+                      <button
+                        onClick={() => toggleWatchlist(item.slug)}
+                        className={followed ? ui.buttonWatchRemove : ui.buttonWatchAdd}
+                      >
+                        {followed ? 'Retirer de ma watchlist' : 'Ajouter a ma watchlist'}
+                      </button>
+                      {followed && (
+                        <button
+                          onClick={() => markAsSeen(item.slug, item.published_at)}
+                          className={ui.buttonSecondary}
+                        >
+                          Marquer comme lu
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               );

@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import AppShell from '../../components/AppShell';
+import WatchlistToggleButton from '../../components/WatchlistToggleButton';
 import { supabase } from '../../../lib/supabase';
 
 type Props = {
@@ -52,6 +53,7 @@ export default async function GamePage({ params }: Props) {
             >
               Voir la source originale
             </a>
+            <WatchlistToggleButton slug={latest.slug} />
           </div>
         </div>
 
