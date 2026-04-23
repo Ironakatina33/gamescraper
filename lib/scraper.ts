@@ -57,6 +57,8 @@ export const genericConfig: ScraperConfig = {
     '.blog-post',
     'article',
     '.post-outer',
+    '.item',
+    '.game-item',
   ],
   titleSelectors: [
     'h3.entry-title a',
@@ -67,6 +69,8 @@ export const genericConfig: ScraperConfig = {
     'h2 a',
     '.title a',
     'a[rel="bookmark"]',
+    '.entry-header a',
+    '.game-title a',
   ],
   linkSelectors: [
     'h3.entry-title a',
@@ -77,6 +81,8 @@ export const genericConfig: ScraperConfig = {
     'h2 a',
     '.read-more',
     'a',
+    '.entry-header a',
+    '.game-link a',
   ],
   imageSelectors: [
     'img.entry-image',
@@ -85,6 +91,8 @@ export const genericConfig: ScraperConfig = {
     '.post-thumbnail img',
     'img[src*="wp-content"]',
     'img',
+    '.game-image img',
+    '.thumbnail img',
   ],
   summarySelectors: [
     '.summaryy',
@@ -92,16 +100,20 @@ export const genericConfig: ScraperConfig = {
     '.post-summary',
     '.excerpt',
     'p',
+    '.entry-content p:first',
+    '.game-summary',
+    '.description',
   ],
   timeSelectors: [
     'time.entry-date',
     'time[datetime]',
     'time',
-    '.published',
+    '.entry-date',
     '.post-date',
-    'meta[property="article:published_time"]',
+    '.published',
+    '.game-date',
   ],
-  source: 'game3rb',
+  source: 'Game3Rb',
 };
 
 /** Convert text to URL-friendly slug */

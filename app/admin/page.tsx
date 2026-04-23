@@ -22,11 +22,11 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<'actions' | 'stats' | 'recent'>('actions');
 
   // UI classes inline to avoid dependency issues
-  const cardClass = 'rounded-xl border border-[#263241] bg-[#111b28] p-5';
-  const buttonPrimary = 'rounded-xl bg-[#66c0f4] px-4 py-3 text-[#0b141b] font-semibold hover:bg-[#8fd3ff] disabled:opacity-50 transition';
-  const buttonSecondary = 'rounded-xl bg-[#223041] px-4 py-3 text-white font-semibold hover:bg-[#2d4055] disabled:opacity-50 transition';
-  const buttonDanger = 'rounded-xl bg-red-500/20 px-4 py-3 text-red-200 font-semibold hover:bg-red-500/30 disabled:opacity-50 transition';
-  const sectionTitle = 'text-lg font-bold text-white';
+  const cardClass = 'rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-md p-6 shadow-xl';
+  const buttonPrimary = 'rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-3 text-white font-semibold shadow-lg hover:shadow-blue-500/25 hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 transition-all duration-300';
+  const buttonSecondary = 'rounded-xl bg-white/10 backdrop-blur-sm px-6 py-3 text-white font-semibold border border-white/20 hover:bg-white/20 disabled:opacity-50 transition-all duration-300';
+  const buttonDanger = 'rounded-xl bg-gradient-to-r from-red-500/20 to-red-600/20 backdrop-blur-sm px-6 py-3 text-red-300 font-semibold border border-red-400/30 hover:bg-red-500/30 disabled:opacity-50 transition-all duration-300';
+  const sectionTitle = 'text-xl font-bold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent';
 
   useEffect(() => {
     loadStats();
@@ -140,12 +140,12 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0b1118] text-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900/20 to-slate-900 text-white">
       {/* Header */}
-      <header className="border-b border-[#1e2d3d] bg-[#111b28]">
+      <header className="border-b border-white/10 bg-slate-900/80 backdrop-blur-xl shadow-lg">
         <div className="mx-auto max-w-6xl px-4 py-4">
           <div className="flex items-center justify-between">
-            <Link href="/" className="inline-flex items-center gap-2 text-xl font-bold text-[#66c0f4]">
+            <Link href="/" className="inline-flex items-center gap-2 text-xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <rect x="2" y="6" width="20" height="12" rx="2" />
                 <path d="M6 10h.01M6 14h.01" />

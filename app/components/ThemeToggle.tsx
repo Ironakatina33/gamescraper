@@ -8,7 +8,7 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className="flex h-9 w-9 items-center justify-center rounded-md border border-[#333] bg-[#111] text-white transition hover:bg-[#222]"
+      className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm text-white transition-all duration-300 hover:bg-white/10 hover:scale-110 hover:rotate-12"
       aria-label={theme === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'}
       title={theme === 'dark' ? 'Mode clair' : 'Mode sombre'}
     >
@@ -16,14 +16,15 @@ export default function ThemeToggle() {
         // Sun icon for light mode
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
+          width="18"
+          height="18"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
+          className="text-yellow-300"
         >
           <circle cx="12" cy="12" r="5" />
           <line x1="12" y1="1" x2="12" y2="3" />
@@ -39,14 +40,15 @@ export default function ThemeToggle() {
         // Moon icon for dark mode
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
+          width="18"
+          height="18"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
+          className="text-blue-300"
         >
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
         </svg>
