@@ -13,10 +13,22 @@ const HOST_PRIORITY: Record<string, number> = {
   'mediafire': 2,
   'drive': 3,
   'google': 3,
-  'torrent': 4,
-  '1fichier': 5,
-  'uptobox': 6,
-  'rapidgator': 7,
+  'thenewscasts': 4,
+  'torrent': 5,
+  '1fichier': 6,
+  'uptobox': 7,
+  'rapidgator': 8,
+  'qiwi': 4,
+  'buzzheavier': 5,
+  'krakenfiles': 5,
+  'gofile': 4,
+  'pixeldrain': 4,
+};
+
+const HOST_LABELS: Record<string, string> = {
+  'thenewscasts': 'Download',
+  'likegames': 'Download',
+  'External Link': 'Download',
 };
 
 function hostPriority(host: string): number {
@@ -54,7 +66,7 @@ export default function DownloadLinks({ links }: { links: DownloadLink[] }) {
             <div className="flex items-center justify-between mb-3">
               <span className="mono text-[10px] uppercase tracking-[0.18em] text-[var(--brand-hi)] flex items-center gap-2">
                 <span className="h-1.5 w-1.5 rounded-full bg-[var(--brand)]" />
-                {host}
+                {HOST_LABELS[host] || host}
               </span>
               <span className="mono text-[10px] text-[var(--ink-muted)]">
                 {hostLinks.length} lien{hostLinks.length > 1 ? 's' : ''}

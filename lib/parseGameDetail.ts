@@ -197,7 +197,9 @@ export function parseGameDetail(html: string, articleUrl: string): ParsedGameDet
     'turbobit.net', 'nitroflare.com', 'filerio.in', 'share-online.biz',
     'katfile.com', 'dl.free.fr', 'transfer.sh', 'we.tl', 'wetransfer.com',
     'pixeldrain.com', 'bowfile.com', 'megaup.net', 'drop.download',
-    'anonfiles.com', 'bayfiles.com', '1drv.ms', 'onedrive.live.com'
+    'anonfiles.com', 'bayfiles.com', '1drv.ms', 'onedrive.live.com',
+    'thenewscasts.com', 'likegames.org', 'oxy.cloud', 'datanodes.to',
+    'qiwi.gg', 'buzzheavier.com', 'krakenfiles.com', 'racaty.net'
   ];
 
   // Look for links in various contexts
@@ -212,7 +214,7 @@ export function parseGameDetail(html: string, articleUrl: string): ParsedGameDet
 
     // Check if it's a download link
     const isDownloadHost = downloadHosts.some(host => lowerHref.includes(host));
-    const isDownloadText = /download|part|mirror|link|mega|drive|mediafire|zippy|gofile/i.test(lowerText);
+    const isDownloadText = /download|part|mirror|link|mega|drive|mediafire|zippy|gofile|thenewscasts/i.test(lowerText);
     const isDirectLink = /\.zip$|\.rar$|\.7z$|\.iso$|\.exe$|\.dmg$|\.pkg$/i.test(lowerHref);
 
     if (isDownloadHost || isDownloadText || isDirectLink) {
