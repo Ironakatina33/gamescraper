@@ -66,5 +66,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/api/admin/:path*', '/api/sync'],
+  matcher: ['/admin/:path*', '/api/admin/:path*', '/api/sync', '/api/sync-igg'],
 };

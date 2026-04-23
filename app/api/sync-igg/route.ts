@@ -48,8 +48,14 @@ async function fetchPage(url: string): Promise<string | null> {
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization');
   const expected = `Bearer ${process.env.CRON_SECRET || '14102004'}`;
+  const adminSecret = process.env.ADMIN_SECRET || '14102004';
+  const adminCookie = req.cookies.get('admin-auth')?.value;
 
-  if (authHeader !== expected) {
+  const isAuthed =
+    authHeader === expected ||
+    adminCookie === adminSecret;
+
+  if (!isAuthed) {
     return NextResponse.json(
       { ok: false, error: 'Non autorisé' },
       { status: 401 }

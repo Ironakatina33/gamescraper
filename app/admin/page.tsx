@@ -107,9 +107,7 @@ export default function AdminPage() {
   async function scrapeData() {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/sync', {
-        headers: { Authorization: `Bearer 14102004` },
-      });
+      const res = await fetch('/api/sync');
       const data = await res.json();
       if (data.ok) {
         showMsg(`${data.found || 0} jeux trouvés, ${data.inserted || 0} insérés`);
@@ -140,9 +138,7 @@ export default function AdminPage() {
   async function scrapeIgg() {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/sync-igg', {
-        headers: { Authorization: `Bearer 14102004` },
-      });
+      const res = await fetch('/api/sync-igg');
       const data = await res.json();
       if (data.ok) {
         showMsg(`IGG Games: ${data.found || 0} jeux trouvés, ${data.inserted || 0} insérés (${data.pages_scraped} pages)`);
