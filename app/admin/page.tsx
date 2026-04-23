@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ConfirmModal from '../components/ConfirmModal';
 
@@ -53,9 +54,15 @@ interface TopGame {
 type TabId = 'scrape' | 'stats' | 'games' | 'add';
 
 export default function AdminPage() {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [loadingSource, setLoadingSource] = useState<string | null>(null);
   const [message, setMessage] = useState('');
+
+  async function handleLogout() {
+    await fetch('/api/admin/logout', { method: 'POST' });
+    router.push('/admin/login');
+  }
   const [messageType, setMessageType] = useState<'success' | 'error'>('success');
   const [stats, setStats] = useState({ updates: 0, details: 0, sources: 0 });
   const [activeTab, setActiveTab] = useState<TabId>('scrape');
@@ -368,6 +375,12 @@ export default function AdminPage() {
             <Link href="/" className="mono text-[11px] uppercase tracking-[0.2em] text-[#6a6b78] hover:text-[#f5f5f7] transition-colors">
               ↩ Exit
             </Link>
+            <button
+              onClick={handleLogout}
+              className="mono text-[11px] uppercase tracking-[0.2em] text-[#ff5a5f] hover:text-[#ff8a8f] transition-colors"
+            >
+              Déconnexion
+            </button>
           </div>
         </div>
       </header>

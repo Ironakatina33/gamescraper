@@ -12,6 +12,11 @@ const PROTECTED_API_ROUTES = ['/api/admin', '/api/sync', '/api/sync-igg', '/api/
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Allow login/logout pages and APIs without auth
+  if (pathname === '/admin/login' || pathname === '/api/admin/login' || pathname === '/api/admin/logout') {
+    return NextResponse.next();
+  }
+
   // Check if this is a protected route
   const isProtectedPage = PROTECTED_ROUTES.some(route => pathname.startsWith(route));
   const isProtectedApi = PROTECTED_API_ROUTES.some(route => pathname.startsWith(route));
@@ -45,8 +50,8 @@ export function middleware(request: NextRequest) {
       );
     }
 
-    // For pages, redirect to home with error
-    return NextResponse.redirect(new URL('/?error=unauthorized', request.url));
+    // For pages, redirect to login
+    return NextResponse.redirect(new URL('/admin/login', request.url));
   }
 
   // If authenticated via query param, set cookie for future requests
