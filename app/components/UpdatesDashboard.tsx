@@ -67,10 +67,26 @@ export default function UpdatesDashboard({ updates, onRefresh }: UpdatesDashboar
   const [watchlistOnly, setWatchlistOnly] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortMode, setSortMode] = useState<'recent' | 'popular' | 'alpha'>('recent');
+  const [viewCounts, setViewCounts] = useState<Record<string, number>>({});
   const itemsPerPage = 10;
 
+  // Fetch view counts for popularity sorting
+  useEffect(() => {
+    if (sortMode === 'popular' && Object.keys(viewCounts).length === 0) {
+      fetch('/api/views?limit=100')
+        .then(r => r.json())
+        .then(d => {
+          const map: Record<string, number> = {};
+          for (const item of d.top ?? []) map[item.slug] = item.view_count;
+          setViewCounts(map);
+        })
+        .catch(() => {});
+    }
+  }, [sortMode, viewCounts]);
+
   // Ref to track filter changes for page reset
-  const filterKey = useMemo(() => `${search}-${selectedSource}-${watchlistOnly}`, [search, selectedSource, watchlistOnly]);
+  const filterKey = useMemo(() => `${search}-${selectedSource}-${watchlistOnly}-${sortMode}`, [search, selectedSource, watchlistOnly, sortMode]);
   const prevFilterKey = useRef(filterKey);
 
   useEffect(() => {
@@ -133,7 +149,7 @@ export default function UpdatesDashboard({ updates, onRefresh }: UpdatesDashboar
   const filteredUpdates = useMemo(() => {
     const value = search.trim().toLowerCase();
 
-    return withStatus.filter((item) => {
+    const filtered = withStatus.filter((item) => {
       const matchesSearch =
         !value ||
         item.title.toLowerCase().includes(value) ||
@@ -148,7 +164,16 @@ export default function UpdatesDashboard({ updates, onRefresh }: UpdatesDashboar
 
       return matchesSearch && matchesSource && matchesWatchlist;
     });
-  }, [withStatus, search, selectedSource, watchlistOnly]);
+
+    if (sortMode === 'popular') {
+      filtered.sort((a, b) => (viewCounts[b.slug] || 0) - (viewCounts[a.slug] || 0));
+    } else if (sortMode === 'alpha') {
+      filtered.sort((a, b) => a.title.localeCompare(b.title));
+    }
+    // 'recent' is the default order from the query
+
+    return filtered;
+  }, [withStatus, search, selectedSource, watchlistOnly, sortMode, viewCounts]);
 
   // Pagination
   const totalPages = Math.ceil(filteredUpdates.length / itemsPerPage);
@@ -182,10 +207,10 @@ export default function UpdatesDashboard({ updates, onRefresh }: UpdatesDashboar
   function toggleWatchlist(slug: string, title: string) {
     if (watchlist.includes(slug)) {
       setWatchlist(watchlist.filter((item) => item !== slug));
-      showInfo(`${title} retiré de la watchlist`);
+      showInfo(`${title} retiré de la collection`);
     } else {
       setWatchlist([...watchlist, slug]);
-      showSuccess(`${title} ajouté à la watchlist`);
+      showSuccess(`${title} ajouté à la collection`);
     }
   }
 
@@ -267,6 +292,22 @@ export default function UpdatesDashboard({ updates, onRefresh }: UpdatesDashboar
         </div>
 
         <div>
+          <p className={ui.sectionTitle}>Tri</p>
+          <div className="mt-3 relative">
+            <select
+              value={sortMode}
+              onChange={(e) => setSortMode(e.target.value as 'recent' | 'popular' | 'alpha')}
+              className={`${ui.select} pr-10`}
+            >
+              <option value="recent">Plus récent</option>
+              <option value="popular">Populaire</option>
+              <option value="alpha">A → Z</option>
+            </select>
+            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[var(--ink-muted)]">↓</span>
+          </div>
+        </div>
+
+        <div>
           <p className={ui.sectionTitle}>Actualisation</p>
           <div className="mt-3">
             <AutoRefreshToggle
@@ -286,7 +327,7 @@ export default function UpdatesDashboard({ updates, onRefresh }: UpdatesDashboar
               onClick={() => setWatchlistOnly((v) => !v)}
               className={`w-full ${watchlistOnly ? ui.buttonWatchRemove : ui.buttonSecondary}`}
             >
-              {watchlistOnly ? 'Voir tout' : 'Watchlist seulement'}
+              {watchlistOnly ? 'Voir tout' : 'Collection seulement'}
             </button>
             <button onClick={markAllAsSeen} className={`w-full ${ui.buttonGhost} border border-[var(--line-strong)]`}>
               Tout marquer comme lu
@@ -296,7 +337,7 @@ export default function UpdatesDashboard({ updates, onRefresh }: UpdatesDashboar
 
         <div className="border-t border-[var(--line)] pt-6 space-y-3">
           <RowStat label="Résultats" value={filteredUpdates.length} />
-          <RowStat label="Watchlist" value={watchlist.length} />
+          <RowStat label="Collection" value={watchlist.length} />
           <RowStat label="Non lues" value={newCount} accent />
         </div>
       </aside>
@@ -400,7 +441,7 @@ export default function UpdatesDashboard({ updates, onRefresh }: UpdatesDashboar
                         followed ? ui.buttonWatchRemove : ui.buttonWatchAdd
                       }`}
                     >
-                      {followed ? '− Retirer' : '+ Watchlist'}
+                      {followed ? '− Retirer' : '+ Collection'}
                     </button>
                     <a
                       href={item.article_url}

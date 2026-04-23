@@ -19,7 +19,7 @@ type AppShellProps = {
 const navItems = [
   { href: '/updates', label: 'Updates', short: '01' },
   { href: '/games', label: 'Jeux', short: '02' },
-  { href: '/watchlist', label: 'Watchlist', short: '03' },
+  { href: '/watchlist', label: 'Collection', short: '03' },
 ];
 
 function isActiveLink(pathname: string, href: string) {

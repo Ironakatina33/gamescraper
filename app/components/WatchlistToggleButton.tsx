@@ -35,7 +35,7 @@ export default function WatchlistToggleButton({ slug }: Props) {
       onClick={toggle}
       className={followed ? ui.buttonWatchRemove : ui.buttonWatchAdd}
     >
-      {followed ? '− Retirer de la watchlist' : '+ Ajouter à la watchlist'}
+      {followed ? '− Retirer' : '+ Ma collection'}
     </button>
   );
 }

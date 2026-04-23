@@ -3,6 +3,7 @@ import AppShell from '../../components/AppShell';
 import WatchlistToggleButton from '../../components/WatchlistToggleButton';
 import GameViewTracker from '../../components/GameViewTracker';
 import GameComments from '../../components/GameComments';
+import DownloadLinks from '../../components/DownloadLinks';
 import { supabase } from '../../../lib/supabase';
 import { parseGameDetail, type ParsedGameDetail } from '../../../lib/parseGameDetail';
 import { ui } from '../../../lib/ui';
@@ -219,29 +220,7 @@ export default async function GamePage({ params }: Props) {
                 Liens · {detail.download_links.length}
               </p>
             </div>
-            <div className="grid gap-0 sm:grid-cols-2 lg:grid-cols-3 border-t border-l border-[var(--line)]">
-              {detail.download_links.map((link, index) => (
-                <a
-                  key={index}
-                  href={link.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="group border-b border-r border-[var(--line)] p-5 hover:bg-[var(--bg-elev)] transition-colors"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="mono text-[10px] uppercase tracking-[0.18em] text-[var(--brand-hi)]">
-                      {link.host || 'download'}
-                    </span>
-                    <span className="text-[var(--ink-muted)] group-hover:text-[var(--brand-hi)] transition-colors">
-                      ↗
-                    </span>
-                  </div>
-                  <span className="block text-[14px] text-[var(--ink)] line-clamp-2">
-                    {link.text}
-                  </span>
-                </a>
-              ))}
-            </div>
+            <DownloadLinks links={detail.download_links} />
           </section>
         )}
 

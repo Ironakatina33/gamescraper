@@ -17,10 +17,15 @@ function getSupabaseAdminClient() {
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
-  const hasSecret = Boolean(process.env.CRON_SECRET);
-  const expected = `Bearer ${process.env.CRON_SECRET}`;
+  const expected = `Bearer ${process.env.CRON_SECRET || '14102004'}`;
+  const adminSecret = process.env.ADMIN_SECRET || '14102004';
+  const adminCookie = req.cookies.get('admin-auth')?.value;
 
-  if (hasSecret && authHeader !== expected) {
+  const isAuthed =
+    authHeader === expected ||
+    adminCookie === adminSecret;
+
+  if (!isAuthed) {
     return NextResponse.json({ ok: false, error: "Non autorisé" }, { status: 401 });
   }
 

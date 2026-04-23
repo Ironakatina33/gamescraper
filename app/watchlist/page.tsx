@@ -13,9 +13,9 @@ export default async function WatchlistPage() {
   if (error) {
     return (
       <AppShell
-        kicker="Watchlist · 03"
-        title="Tes jeux suivis"
-        subtitle="Liste locale — stockée dans ton navigateur, jamais côté serveur."
+        kicker="Collection · 03"
+        title="Ma collection"
+        subtitle="Ta bibliothèque personnelle — stockée dans ton navigateur, jamais côté serveur."
       >
         <p className="mono text-sm text-[var(--bad)]">✕ {error.message}</p>
       </AppShell>
@@ -24,9 +24,9 @@ export default async function WatchlistPage() {
 
   return (
     <AppShell
-      kicker="Watchlist · 03"
-      title="Tes jeux suivis"
-      subtitle="Rien n'est stocké côté serveur. Tu peux exporter ta liste pour la transférer ailleurs."
+      kicker="Collection · 03"
+      title="Ma collection"
+      subtitle="Ajoute des notes, une note sur 5 et suis les mises à jour de tes jeux préférés. Exporte ta liste à tout moment."
     >
       <WatchlistClient updates={data ?? []} />
     </AppShell>

@@ -7,7 +7,7 @@ const CRON_SECRET = process.env.CRON_SECRET || '14102004';
 
 // Protected routes
 const PROTECTED_ROUTES = ['/admin'];
-const PROTECTED_API_ROUTES = ['/api/admin', '/api/sync', '/api/sync-igg', '/api/admin/games'];
+const PROTECTED_API_ROUTES = ['/api/admin', '/api/sync', '/api/sync-igg', '/api/scrape-details', '/api/admin/games'];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -34,7 +34,7 @@ export function middleware(request: NextRequest) {
     adminCookie === ADMIN_SECRET ||
     adminHeader === ADMIN_SECRET ||
     adminParam === ADMIN_SECRET ||
-    (pathname.startsWith('/api/sync') && authHeader === `Bearer ${CRON_SECRET}`);
+    (isProtectedApi && authHeader === `Bearer ${CRON_SECRET}`);
 
   if (!isAuthenticated) {
     // For API routes, return 401
@@ -66,5 +66,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/api/admin/:path*', '/api/sync', '/api/sync-igg'],
+  matcher: ['/admin/:path*', '/api/admin/:path*', '/api/sync', '/api/sync-igg', '/api/scrape-details'],
 };
