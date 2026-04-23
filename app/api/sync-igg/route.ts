@@ -62,8 +62,18 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  const supabase = getSupabaseAdminClient();
+  let logId: string | null = null;
+
   try {
-    const supabase = getSupabaseAdminClient();
+    // Create scrape log entry
+    const { data: logRow } = await supabase
+      .from('scrape_logs')
+      .insert({ source: 'IGGGames', status: 'running' })
+      .select('id')
+      .single();
+    logId = logRow?.id ?? null;
+
     const allUpdates: ReturnType<typeof parseIggHtml> = [];
 
     // Scrape multiple pages
@@ -78,7 +88,6 @@ export async function GET(req: NextRequest) {
       console.log(`[IGG] Page ${page}: ${updates.length} jeux trouvés`);
       allUpdates.push(...updates);
 
-      // Small delay between pages to be polite
       if (page < PAGES_TO_SCRAPE) {
         await new Promise((r) => setTimeout(r, 1000));
       }
@@ -92,16 +101,17 @@ export async function GET(req: NextRequest) {
       return true;
     });
 
-    console.log(`[IGG] Total unique: ${unique.length}`);
-
     if (unique.length === 0) {
-      return NextResponse.json({
-        ok: true,
-        found: 0,
-        saved: false,
-        message: 'Aucun jeu trouvé sur IGG Games — le site a peut-être changé sa structure',
-      });
+      if (logId) await supabase.from('scrape_logs').update({ status: 'success', finished_at: new Date().toISOString(), games_found: 0 }).eq('id', logId);
+      return NextResponse.json({ ok: true, found: 0, saved: false, games: [], message: 'Aucun jeu trouvé sur IGG Games' });
     }
+
+    // Check which are genuinely new
+    const { data: existing } = await supabase
+      .from('game_updates')
+      .select('article_url')
+      .in('article_url', unique.map(u => u.article_url));
+    const existingUrls = new Set((existing ?? []).map((e: any) => e.article_url));
 
     const { data, error } = await supabase
       .from('game_updates')
@@ -109,11 +119,29 @@ export async function GET(req: NextRequest) {
       .select();
 
     if (error) {
-      console.error('[IGG] Supabase error:', error);
-      return NextResponse.json(
-        { ok: false, error: `Erreur base de données: ${error.message}` },
-        { status: 500 }
-      );
+      if (logId) await supabase.from('scrape_logs').update({ status: 'error', finished_at: new Date().toISOString(), error: error.message }).eq('id', logId);
+      return NextResponse.json({ ok: false, error: `Erreur base de données: ${error.message}` }, { status: 500 });
+    }
+
+    const gamesNew = unique.filter(u => !existingUrls.has(u.article_url)).length;
+
+    const games = unique.map(u => ({
+      title: u.title,
+      slug: u.slug,
+      image_url: u.image_url,
+      article_url: u.article_url,
+      published_at: u.published_at,
+      is_new: !existingUrls.has(u.article_url),
+    }));
+
+    if (logId) {
+      await supabase.from('scrape_logs').update({
+        status: 'success',
+        finished_at: new Date().toISOString(),
+        games_found: unique.length,
+        games_new: gamesNew,
+        details: { games },
+      }).eq('id', logId);
     }
 
     return NextResponse.json({
@@ -121,17 +149,13 @@ export async function GET(req: NextRequest) {
       source: 'IGGGames',
       pages_scraped: PAGES_TO_SCRAPE,
       found: unique.length,
+      new: gamesNew,
       saved: true,
       inserted: data?.length ?? 0,
+      games,
     });
   } catch (error) {
-    console.error('[IGG] Error:', error);
-    return NextResponse.json(
-      {
-        ok: false,
-        error: error instanceof Error ? error.message : 'Erreur inconnue',
-      },
-      { status: 500 }
-    );
+    if (logId) await supabase.from('scrape_logs').update({ status: 'error', finished_at: new Date().toISOString(), error: error instanceof Error ? error.message : 'Erreur' }).eq('id', logId);
+    return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : 'Erreur inconnue' }, { status: 500 });
   }
 }

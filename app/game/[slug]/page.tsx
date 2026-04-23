@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation';
 import AppShell from '../../components/AppShell';
 import WatchlistToggleButton from '../../components/WatchlistToggleButton';
+import GameViewTracker from '../../components/GameViewTracker';
+import GameComments from '../../components/GameComments';
 import { supabase } from '../../../lib/supabase';
 import { parseGameDetail, type ParsedGameDetail } from '../../../lib/parseGameDetail';
 import { ui } from '../../../lib/ui';
@@ -112,10 +114,13 @@ export default async function GamePage({ params }: Props) {
           )}
 
           <div className="space-y-5">
-            <p className="mono text-[11px] uppercase tracking-[0.2em] text-[var(--brand-hi)] flex items-center gap-3">
-              <span className="inline-block h-[1px] w-8 bg-[var(--brand)]" />
-              {latest.source} · {formatDate(latest.published_at)}
-            </p>
+            <div className="flex items-center gap-4 flex-wrap">
+              <p className="mono text-[11px] uppercase tracking-[0.2em] text-[var(--brand-hi)] flex items-center gap-3">
+                <span className="inline-block h-[1px] w-8 bg-[var(--brand)]" />
+                {latest.source} · {formatDate(latest.published_at)}
+              </p>
+              <GameViewTracker slug={latest.slug} />
+            </div>
             <h2 className="text-2xl md:text-3xl font-medium leading-tight tracking-[-0.02em]">
               {detail?.title ?? latest.title}
             </h2>
@@ -282,6 +287,9 @@ export default async function GamePage({ params }: Props) {
             ))}
           </ol>
         </section>
+
+        {/* COMMENTS */}
+        <GameComments slug={latest.slug} />
       </div>
     </AppShell>
   );

@@ -15,14 +15,60 @@ interface GameRow {
   published_at?: string | null;
 }
 
-type TabId = 'actions' | 'stats' | 'games' | 'add';
+interface ScrapeGame {
+  title: string;
+  slug: string;
+  image_url: string | null;
+  article_url: string;
+  published_at: string;
+  is_new: boolean;
+}
+
+interface ScrapeResult {
+  source: string;
+  ok: boolean;
+  found: number;
+  new: number;
+  error?: string;
+  games: ScrapeGame[];
+  duration: number;
+}
+
+interface ScrapeLog {
+  id: string;
+  source: string;
+  started_at: string;
+  finished_at: string | null;
+  status: string;
+  games_found: number;
+  games_new: number;
+  error: string | null;
+}
+
+interface TopGame {
+  slug: string;
+  view_count: number;
+}
+
+type TabId = 'scrape' | 'stats' | 'games' | 'add';
 
 export default function AdminPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingSource, setLoadingSource] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error'>('success');
   const [stats, setStats] = useState({ updates: 0, details: 0, sources: 0 });
-  const [activeTab, setActiveTab] = useState<TabId>('actions');
+  const [activeTab, setActiveTab] = useState<TabId>('scrape');
+
+  // Scrape results
+  const [scrapeResults, setScrapeResults] = useState<ScrapeResult[]>([]);
+  const [scrapeLogs, setScrapeLogs] = useState<ScrapeLog[]>([]);
+
+  // Stats
+  const [topGames, setTopGames] = useState<TopGame[]>([]);
+  const [totalViews, setTotalViews] = useState(0);
+  const [totalComments, setTotalComments] = useState(0);
+  const [sourceBreakdown, setSourceBreakdown] = useState<{ source: string; count: number }[]>([]);
 
   // Games management state
   const [games, setGames] = useState<GameRow[]>([]);
@@ -54,7 +100,7 @@ export default function AdminPage() {
   const buttonDanger = 'inline-flex items-center justify-center gap-2 bg-transparent px-5 py-3 text-sm font-medium text-[#ff5a5f] border border-[#ff5a5f]/30 hover:bg-[#ff5a5f]/10 disabled:opacity-50 transition-colors';
   const inputClass = 'w-full border border-[#262732] bg-[#0b0b10] px-4 py-3 text-sm text-[#f5f5f7] outline-none placeholder:text-[#6a6b78] focus:border-[#3e7bfa] transition-colors';
 
-  useEffect(() => { loadStats(); }, []);
+  useEffect(() => { loadStats(); loadScrapeLogs(); loadDetailedStats(); }, []);
 
   const loadGames = useCallback(async (page = 1, search = '') => {
     setGamesLoading(true);
@@ -81,11 +127,34 @@ export default function AdminPage() {
       const response = await fetch('/api/admin/stats');
       if (response.ok) {
         const data = await response.json();
-        setStats({
-          updates: data.updates || 0,
-          details: data.details || 0,
-          sources: data.sources || 0,
-        });
+        setStats({ updates: data.updates || 0, details: data.details || 0, sources: data.sources || 0 });
+        // Build source breakdown from recent data
+        if (data.recent) {
+          const map: Record<string, number> = {};
+          (data.recent as any[]).forEach(r => { map[r.source] = (map[r.source] || 0) + 1; });
+          setSourceBreakdown(Object.entries(map).map(([source, count]) => ({ source, count })).sort((a, b) => b.count - a.count));
+        }
+      }
+    } catch { /* ignore */ }
+  }
+
+  async function loadScrapeLogs() {
+    try {
+      const res = await fetch('/api/admin/scrape-logs');
+      if (res.ok) {
+        const data = await res.json();
+        setScrapeLogs(data.logs ?? []);
+      }
+    } catch { /* ignore */ }
+  }
+
+  async function loadDetailedStats() {
+    try {
+      const viewsRes = await fetch('/api/views?limit=10');
+      if (viewsRes.ok) {
+        const data = await viewsRes.json();
+        setTopGames(data.top ?? []);
+        setTotalViews((data.top ?? []).reduce((s: number, g: TopGame) => s + g.view_count, 0));
       }
     } catch { /* ignore */ }
   }
@@ -104,63 +173,64 @@ export default function AdminPage() {
     setConfirmOpen(true);
   }
 
-  async function scrapeData() {
+  async function runScrape(endpoint: string, sourceName: string) {
     setIsLoading(true);
+    setLoadingSource(sourceName);
+    const start = Date.now();
     try {
-      const res = await fetch('/api/sync');
+      const res = await fetch(endpoint);
       const data = await res.json();
+      const duration = Date.now() - start;
       if (data.ok) {
-        showMsg(`${data.found || 0} jeux trouvés, ${data.inserted || 0} insérés`);
+        const result: ScrapeResult = {
+          source: data.source || sourceName,
+          ok: true,
+          found: data.found || 0,
+          new: data.new || 0,
+          games: data.games || [],
+          duration,
+        };
+        setScrapeResults(prev => [result, ...prev]);
+        showMsg(`${sourceName}: ${result.found} trouvés, ${result.new} nouveaux (${(duration / 1000).toFixed(1)}s)`);
         loadStats();
+        loadScrapeLogs();
       } else {
-        showMsg(data.error || 'Erreur de scraping', 'error');
+        const result: ScrapeResult = { source: sourceName, ok: false, found: 0, new: 0, error: data.error, games: [], duration };
+        setScrapeResults(prev => [result, ...prev]);
+        showMsg(data.error || `Erreur ${sourceName}`, 'error');
       }
-    } catch { showMsg('Erreur de connexion', 'error'); }
+    } catch {
+      setScrapeResults(prev => [{ source: sourceName, ok: false, found: 0, new: 0, error: 'Connexion échouée', games: [], duration: Date.now() - start }, ...prev]);
+      showMsg('Erreur de connexion', 'error');
+    }
     setIsLoading(false);
+    setLoadingSource(null);
   }
 
   async function scrapeDetails() {
     setIsLoading(true);
+    setLoadingSource('Détails');
     try {
       const res = await fetch('/api/scrape-details');
       const data = await res.json();
       if (data.ok) {
-        const count = data.success_count ?? 0;
-        showMsg(`${count} détails scrapés avec succès`);
+        showMsg(`${data.success_count ?? 0} détails scrapés avec succès`);
         loadStats();
       } else {
         showMsg(data.error || 'Erreur lors du scraping des détails', 'error');
       }
     } catch { showMsg('Erreur de connexion', 'error'); }
     setIsLoading(false);
+    setLoadingSource(null);
   }
 
-  async function scrapeIgg() {
+  async function fixSources() {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/sync-igg');
+      const res = await fetch('/api/admin/fix-sources', { method: 'POST' });
       const data = await res.json();
-      if (data.ok) {
-        showMsg(`IGG Games: ${data.found || 0} jeux trouvés, ${data.inserted || 0} insérés (${data.pages_scraped} pages)`);
-        loadStats();
-      } else {
-        showMsg(data.error || 'Erreur de scraping IGG', 'error');
-      }
-    } catch { showMsg('Erreur de connexion', 'error'); }
-    setIsLoading(false);
-  }
-
-  async function addSampleData() {
-    setIsLoading(true);
-    try {
-      const res = await fetch('/api/seed');
-      const data = await res.json();
-      if (data.ok) {
-        showMsg(`${data.data?.length || 0} jeux ajoutés avec succès`);
-        loadStats();
-      } else {
-        showMsg(data.error || 'Erreur lors de l\'ajout', 'error');
-      }
+      if (data.ok) { showMsg(data.message || 'Sources normalisées'); loadStats(); }
+      else { showMsg(data.error || 'Erreur', 'error'); }
     } catch { showMsg('Erreur de connexion', 'error'); }
     setIsLoading(false);
   }
@@ -268,10 +338,10 @@ export default function AdminPage() {
   }
 
   const tabs: Array<{ id: TabId; label: string; num: string }> = [
-    { id: 'actions', label: 'Actions', num: '01' },
-    { id: 'games', label: 'Gestion des jeux', num: '02' },
-    { id: 'add', label: 'Ajouter un jeu', num: '03' },
-    { id: 'stats', label: 'Statistiques', num: '04' },
+    { id: 'scrape', label: 'Scraping', num: '01' },
+    { id: 'stats', label: 'Statistiques', num: '02' },
+    { id: 'games', label: 'Gestion des jeux', num: '03' },
+    { id: 'add', label: 'Ajouter un jeu', num: '04' },
   ];
 
   return (
@@ -353,19 +423,118 @@ export default function AdminPage() {
         </div>
 
         <section className="mt-10 pb-20">
-          {/* ===== ACTIONS TAB ===== */}
-          {activeTab === 'actions' && (
-            <div className="grid gap-0 md:grid-cols-2 border-t border-l border-[#1a1b23]">
-              <ActionCard num="01" title="Scraper Game3Rb" body="Lance une passe complète sur game3rb.com et sauvegarde les nouveautés en base."
-                button={<button onClick={scrapeData} disabled={isLoading} className={buttonPrimary}>{isLoading ? 'Scraping...' : 'Lancer le scrape ↗'}</button>} />
-              <ActionCard num="02" title="Scraper IGG Games" body="Scrape les 3 premières pages d'igg-games.com et sauvegarde les nouveautés en base."
-                button={<button onClick={scrapeIgg} disabled={isLoading} className={buttonPrimary}>{isLoading ? 'Scraping IGG...' : 'Scraper IGG ↗'}</button>} />
-              <ActionCard num="03" title="Scraper les détails" body="Récupère pour chaque update les infos structurées (trailer, config, screenshots, liens)."
-                button={<button onClick={scrapeDetails} disabled={isLoading} className={buttonSecondary}>{isLoading ? 'Scraping...' : 'Détails structurés'}</button>} />
-              <ActionCard num="04" title="Seed de démo" body="Injecte des données d'exemple pour tester l'interface sans scraper."
-                button={<button onClick={addSampleData} disabled={isLoading} className={buttonSecondary}>{isLoading ? 'Chargement...' : 'Ajouter seed'}</button>} />
-              <ActionCard num="05" title="Cache local" body="Efface la watchlist + statut lu + thème stockés dans ce navigateur. Irréversible." danger
-                button={<button onClick={clearCache} disabled={isLoading} className={buttonDanger}>Vider le cache</button>} />
+          {/* ===== SCRAPE TAB ===== */}
+          {activeTab === 'scrape' && (
+            <div className="space-y-10">
+              {/* Source cards */}
+              <div className="grid gap-0 md:grid-cols-3 border-t border-l border-[#1a1b23]">
+                <SourceCard
+                  name="Game3Rb"
+                  url="game3rb.com"
+                  color="#3e7bfa"
+                  loading={loadingSource === 'Game3Rb'}
+                  disabled={isLoading}
+                  onScrape={() => runScrape('/api/sync', 'Game3Rb')}
+                />
+                <SourceCard
+                  name="IGG Games"
+                  url="igg-games.com"
+                  color="#f59e0b"
+                  loading={loadingSource === 'IGG Games'}
+                  disabled={isLoading}
+                  onScrape={() => runScrape('/api/sync-igg', 'IGG Games')}
+                />
+                <div className="border-r border-b border-[#1a1b23] p-6 flex flex-col gap-3">
+                  <p className="mono text-[10px] uppercase tracking-[0.2em] text-[#6a6b78]">— Outils</p>
+                  <button onClick={scrapeDetails} disabled={isLoading} className={`${buttonSecondary} text-xs`}>
+                    {loadingSource === 'Détails' ? 'Scraping détails...' : 'Scraper les détails'}
+                  </button>
+                  <button onClick={fixSources} disabled={isLoading} className={`${buttonSecondary} text-xs`}>
+                    Normaliser les sources
+                  </button>
+                  <button onClick={clearCache} disabled={isLoading} className={`${buttonDanger} text-xs`}>
+                    Vider le cache local
+                  </button>
+                </div>
+              </div>
+
+              {/* Live results */}
+              {scrapeResults.length > 0 && (
+                <div>
+                  <p className="mono text-[11px] uppercase tracking-[0.2em] text-[#6a6b78] mb-4 flex items-center gap-3">
+                    <span className="inline-block h-[1px] w-8 bg-[#1a1b23]" />
+                    Derniers résultats · {scrapeResults.length}
+                  </p>
+                  <div className="space-y-4">
+                    {scrapeResults.slice(0, 3).map((r, idx) => (
+                      <div key={idx} className={`border ${r.ok ? 'border-[#1fd18c]/20 bg-[#1fd18c]/[0.02]' : 'border-[#ff5a5f]/20 bg-[#ff5a5f]/[0.02]'}`}>
+                        {/* Result header */}
+                        <div className="flex items-center justify-between px-5 py-3 border-b border-[#1a1b23]/50">
+                          <div className="flex items-center gap-3">
+                            <span className={`h-2 w-2 rounded-full ${r.ok ? 'bg-[#1fd18c]' : 'bg-[#ff5a5f]'}`} />
+                            <span className="text-[14px] font-medium">{r.source}</span>
+                            <span className="mono text-[11px] text-[#6a6b78]">{(r.duration / 1000).toFixed(1)}s</span>
+                          </div>
+                          <div className="flex items-center gap-4 mono text-[11px]">
+                            <span className="text-[#a7a8b3]">{r.found} trouvés</span>
+                            {r.new > 0 && <span className="text-[#1fd18c] font-medium">+{r.new} nouveaux</span>}
+                            {r.error && <span className="text-[#ff5a5f]">{r.error}</span>}
+                          </div>
+                        </div>
+                        {/* Game list */}
+                        {r.games.length > 0 && (
+                          <div className="max-h-[320px] overflow-y-auto">
+                            {r.games.map((g, gi) => (
+                              <div key={gi} className="flex items-center gap-3 px-5 py-2.5 border-b border-[#1a1b23]/30 last:border-b-0 hover:bg-[#0d0d12]">
+                                {g.image_url ? (
+                                  <img src={g.image_url} alt="" className="h-10 w-10 object-cover border border-[#1a1b23] shrink-0" />
+                                ) : (
+                                  <div className="h-10 w-10 border border-dashed border-[#262732] grid place-items-center shrink-0">
+                                    <span className="text-[8px] text-[#6a6b78]">—</span>
+                                  </div>
+                                )}
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-[13px] text-[#f5f5f7] truncate">{g.title}</p>
+                                  <p className="mono text-[10px] text-[#6a6b78] truncate">{g.slug}</p>
+                                </div>
+                                {g.is_new ? (
+                                  <span className="mono text-[9px] uppercase tracking-[0.15em] px-2 py-0.5 bg-[#1fd18c]/10 text-[#1fd18c] border border-[#1fd18c]/20 shrink-0">new</span>
+                                ) : (
+                                  <span className="mono text-[9px] uppercase tracking-[0.15em] px-2 py-0.5 text-[#6a6b78] border border-[#262732] shrink-0">exists</span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Scrape history */}
+              {scrapeLogs.length > 0 && (
+                <div>
+                  <p className="mono text-[11px] uppercase tracking-[0.2em] text-[#6a6b78] mb-4 flex items-center gap-3">
+                    <span className="inline-block h-[1px] w-8 bg-[#1a1b23]" />
+                    Historique des scrapes
+                  </p>
+                  <div className="border-t border-l border-[#1a1b23]">
+                    {scrapeLogs.slice(0, 10).map((log) => (
+                      <div key={log.id} className="flex items-center gap-4 px-5 py-3 border-b border-r border-[#1a1b23]">
+                        <span className={`h-2 w-2 rounded-full shrink-0 ${log.status === 'success' ? 'bg-[#1fd18c]' : log.status === 'running' ? 'bg-[#f59e0b] animate-pulse' : 'bg-[#ff5a5f]'}`} />
+                        <span className="text-[13px] font-medium w-24 shrink-0">{log.source}</span>
+                        <span className="mono text-[11px] text-[#6a6b78] flex-1">
+                          {new Date(log.started_at).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                        <span className="mono text-[11px] text-[#a7a8b3]">{log.games_found} trouvés</span>
+                        {log.games_new > 0 && <span className="mono text-[11px] text-[#1fd18c]">+{log.games_new}</span>}
+                        {log.error && <span className="mono text-[10px] text-[#ff5a5f] truncate max-w-[200px]">{log.error}</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -597,10 +766,79 @@ export default function AdminPage() {
 
           {/* ===== STATS TAB ===== */}
           {activeTab === 'stats' && (
-            <div className="grid gap-0 md:grid-cols-3 border-t border-l border-[#1a1b23]">
-              <BigStat label="Total updates" value={stats.updates} accent />
-              <BigStat label="Détails scrapés" value={stats.details} />
-              <BigStat label="Sources actives" value={stats.sources} />
+            <div className="space-y-10">
+              {/* Big numbers */}
+              <div className="grid gap-0 md:grid-cols-4 border-t border-l border-[#1a1b23]">
+                <BigStat label="Total updates" value={stats.updates} accent />
+                <BigStat label="Détails scrapés" value={stats.details} />
+                <BigStat label="Sources actives" value={stats.sources} />
+                <BigStat label="Vues totales" value={totalViews} accent />
+              </div>
+
+              <div className="grid gap-8 lg:grid-cols-2">
+                {/* Top games by views */}
+                <div>
+                  <p className="mono text-[11px] uppercase tracking-[0.2em] text-[#6a6b78] mb-4 flex items-center gap-3">
+                    <span className="inline-block h-[1px] w-8 bg-[#1a1b23]" />
+                    Top jeux par vues
+                  </p>
+                  <div className="border-t border-l border-[#1a1b23]">
+                    {topGames.length === 0 ? (
+                      <div className="border-r border-b border-[#1a1b23] p-8 text-center">
+                        <p className="text-[13px] text-[#6a6b78]">Aucune vue enregistrée pour le moment</p>
+                      </div>
+                    ) : (
+                      topGames.map((g, i) => {
+                        const maxViews = topGames[0]?.view_count || 1;
+                        const pct = Math.round((g.view_count / maxViews) * 100);
+                        return (
+                          <div key={g.slug} className="relative border-r border-b border-[#1a1b23] px-5 py-3 flex items-center gap-4 overflow-hidden">
+                            <div className="absolute inset-0 bg-[#3e7bfa]/[0.04]" style={{ width: `${pct}%` }} />
+                            <span className="relative mono text-[11px] text-[#6a6b78] w-5 text-right shrink-0">{i + 1}</span>
+                            <Link href={`/game/${g.slug}`} className="relative text-[13px] text-[#f5f5f7] hover:text-[#5b9eff] transition-colors flex-1 truncate">{g.slug}</Link>
+                            <span className="relative mono text-[12px] text-[#5b9eff] font-medium shrink-0">{g.view_count}</span>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+
+                {/* Source breakdown */}
+                <div>
+                  <p className="mono text-[11px] uppercase tracking-[0.2em] text-[#6a6b78] mb-4 flex items-center gap-3">
+                    <span className="inline-block h-[1px] w-8 bg-[#1a1b23]" />
+                    Répartition par source
+                  </p>
+                  <div className="border-t border-l border-[#1a1b23]">
+                    {sourceBreakdown.length === 0 ? (
+                      <div className="border-r border-b border-[#1a1b23] p-8 text-center">
+                        <p className="text-[13px] text-[#6a6b78]">Pas de données</p>
+                      </div>
+                    ) : (
+                      sourceBreakdown.map((s) => {
+                        const total = sourceBreakdown.reduce((sum, x) => sum + x.count, 0);
+                        const pct = total > 0 ? Math.round((s.count / total) * 100) : 0;
+                        return (
+                          <div key={s.source} className="relative border-r border-b border-[#1a1b23] px-5 py-4 overflow-hidden">
+                            <div className="absolute inset-0 bg-[#f59e0b]/[0.04]" style={{ width: `${pct}%` }} />
+                            <div className="relative flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: s.source === 'IGGGames' ? '#f59e0b' : '#3e7bfa' }} />
+                                <span className="text-[14px] font-medium">{s.source}</span>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <span className="mono text-[12px] text-[#a7a8b3]">{s.count} jeux</span>
+                                <span className="mono text-[11px] text-[#6a6b78]">{pct}%</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </section>
@@ -619,6 +857,8 @@ export default function AdminPage() {
     </div>
   );
 }
+
+/* ──────────── Sub-components ──────────── */
 
 function AdminStat({ k, v }: { k: string; v: number }) {
   return (
@@ -640,13 +880,32 @@ function BigStat({ label, value, accent }: { label: string; value: number; accen
   );
 }
 
-function ActionCard({ num, title, body, button, danger }: { num: string; title: string; body: string; button: React.ReactNode; danger?: boolean }) {
+function SourceCard({ name, url, color, loading, disabled, onScrape }: {
+  name: string; url: string; color: string; loading: boolean; disabled: boolean; onScrape: () => void;
+}) {
   return (
-    <div className="border-r border-b border-[#1a1b23] p-6 md:p-8 flex flex-col gap-4">
-      <p className={`mono text-[11px] uppercase tracking-[0.2em] ${danger ? 'text-[#ff5a5f]' : 'text-[#5b9eff]'}`}>— {num}</p>
-      <h3 className="text-xl font-medium tracking-[-0.01em] leading-tight">{title}</h3>
-      <p className="text-[14px] leading-relaxed text-[#a7a8b3] flex-1">{body}</p>
-      <div>{button}</div>
+    <div className="border-r border-b border-[#1a1b23] p-6 flex flex-col gap-4">
+      <div className="flex items-center gap-3">
+        <span className="h-3 w-3 rounded-full" style={{ backgroundColor: color }} />
+        <h3 className="text-lg font-medium tracking-[-0.01em]">{name}</h3>
+      </div>
+      <p className="mono text-[11px] text-[#6a6b78]">{url}</p>
+      <div className="flex-1" />
+      <button
+        onClick={onScrape}
+        disabled={disabled}
+        className={`w-full inline-flex items-center justify-center gap-2 px-5 py-3 text-sm font-medium text-white disabled:opacity-50 transition-all ${loading ? 'animate-pulse' : ''}`}
+        style={{ backgroundColor: loading ? `${color}99` : color }}
+      >
+        {loading ? (
+          <>
+            <span className="h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            Scraping...
+          </>
+        ) : (
+          <>Lancer le scrape ↗</>
+        )}
+      </button>
     </div>
   );
 }
