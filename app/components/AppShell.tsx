@@ -36,6 +36,10 @@ export default function AppShell({
   const pathname = usePathname();
   const [watchlistCount, setWatchlistCount] = useState(0);
   const [clockStr, setClockStr] = useState('');
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Close mobile menu on route change
+  useEffect(() => { setMobileOpen(false); }, [pathname]);
 
   useEffect(() => {
     const readCount = () => {
@@ -70,6 +74,12 @@ export default function AppShell({
     const id = window.setInterval(tick, 30_000);
     return () => window.clearInterval(id);
   }, []);
+
+  // Lock scroll when mobile menu open
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileOpen]);
 
   return (
     <main className={ui.page}>
@@ -113,30 +123,72 @@ export default function AppShell({
               <span className="mono uppercase tracking-[0.2em]">Live</span>
             </span>
             <ThemeToggle />
-          </div>
-        </div>
-
-        {/* Mobile nav */}
-        <div className="md:hidden border-t border-[var(--line)]">
-          <div className={`${ui.container} flex overflow-x-auto gap-1 py-2`}>
-            {navItems.map((item) => {
-              const active = isActiveLink(pathname, item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cx(
-                    'px-3 py-1.5 text-sm whitespace-nowrap',
-                    active ? 'text-[var(--ink)] border-b border-[var(--brand)]' : 'text-[var(--ink-dim)]'
-                  )}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
+            {/* Mobile hamburger */}
+            <button
+              onClick={() => setMobileOpen((v) => !v)}
+              className="md:hidden flex flex-col gap-1 items-center justify-center h-8 w-8 border border-[var(--line-strong)] bg-[var(--bg-elev)]"
+              aria-label="Menu"
+            >
+              <span className={cx('h-[1.5px] w-3.5 bg-[var(--ink)] transition-all duration-200', mobileOpen && 'rotate-45 translate-y-[3.5px]')} />
+              <span className={cx('h-[1.5px] w-3.5 bg-[var(--ink)] transition-all duration-200', mobileOpen && 'opacity-0')} />
+              <span className={cx('h-[1.5px] w-3.5 bg-[var(--ink)] transition-all duration-200', mobileOpen && '-rotate-45 -translate-y-[3.5px]')} />
+            </button>
           </div>
         </div>
       </header>
+
+      {/* Mobile menu overlay */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+          <nav className="absolute top-0 right-0 w-72 h-full bg-[var(--bg)] border-l border-[var(--line)] flex flex-col animate-in">
+            <div className="flex items-center justify-between h-[62px] px-5 border-b border-[var(--line)]">
+              <span className="mono text-[11px] uppercase tracking-[0.2em] text-[var(--ink-muted)]">
+                Navigation
+              </span>
+              <button
+                onClick={() => setMobileOpen(false)}
+                className="text-[var(--ink-dim)] hover:text-[var(--ink)] text-lg"
+              >
+                ×
+              </button>
+            </div>
+            <div className="flex-1 py-4">
+              {navItems.map((item) => {
+                const active = isActiveLink(pathname, item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileOpen(false)}
+                    className={cx(
+                      'flex items-center gap-4 px-5 py-4 text-[15px] transition-colors border-b border-[var(--line)]',
+                      active ? 'text-[var(--ink)] bg-[var(--bg-elev)]' : 'text-[var(--ink-dim)] hover:text-[var(--ink)] hover:bg-[var(--bg-elev)]'
+                    )}
+                  >
+                    <span className="mono text-[10px] text-[var(--ink-muted)]">{item.short}</span>
+                    <span className="flex-1">{item.label}</span>
+                    {item.href === '/watchlist' && watchlistCount > 0 && (
+                      <span className="mono text-[10px] text-[var(--brand-hi)]">
+                        {watchlistCount.toString().padStart(2, '0')}
+                      </span>
+                    )}
+                    {active && <span className="h-1.5 w-1.5 rounded-full bg-[var(--brand)]" />}
+                  </Link>
+                );
+              })}
+            </div>
+            <div className="px-5 py-4 border-t border-[var(--line)] space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="tk-dot live-dot" />
+                <span className="mono text-[11px] uppercase tracking-[0.2em] text-[var(--ink-muted)]">
+                  {clockStr || 'Live'}
+                </span>
+              </div>
+            </div>
+          </nav>
+        </div>
+      )}
 
       {(title || subtitle || kicker || eyebrow) && (
         <section className="border-b border-[var(--line)]">

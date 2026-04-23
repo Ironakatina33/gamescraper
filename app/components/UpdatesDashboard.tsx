@@ -96,6 +96,18 @@ export default function UpdatesDashboard({ updates, onRefresh }: UpdatesDashboar
     enabled: true,
   });
 
+  // Keyboard shortcut: / to focus search
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement).tagName)) {
+        e.preventDefault();
+        document.getElementById('updates-search')?.focus();
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, []);
+
   useEffect(() => {
     saveWatchlist(watchlist);
   }, [watchlist]);
@@ -206,6 +218,7 @@ export default function UpdatesDashboard({ updates, onRefresh }: UpdatesDashboar
           <p className={ui.sectionTitle}>Recherche</p>
           <div className="relative mt-3">
             <input
+              id="updates-search"
               type="text"
               value={search}
               onChange={(e) => {
@@ -214,7 +227,7 @@ export default function UpdatesDashboard({ updates, onRefresh }: UpdatesDashboar
               }}
               onFocus={() => setShowSuggestions(true)}
               onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-              placeholder="Titre, slug, source..."
+              placeholder="Titre, slug, source...  ( / )"
               className={ui.input}
             />
             {showSuggestions && suggestions.length > 0 && search.trim() && (
