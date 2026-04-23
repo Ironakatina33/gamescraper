@@ -34,7 +34,7 @@ export default async function GamesPage() {
         </div>
         <div className={`${ui.card} p-4`}>
           <p className="text-xs uppercase tracking-[0.2em] text-[#8b98a5]">Navigation</p>
-          <p className="mt-2 text-2xl font-black text-[#66c0f4]">/game/[slug]</p>
+          <p className="mt-2 text-2xl font-black text-[#2563eb]">/game/[slug]</p>
         </div>
       </div>
       <div className="grid gap-3 md:grid-cols-2">
@@ -42,13 +42,13 @@ export default async function GamesPage() {
           <Link
             key={item.slug}
             href={`/game/${item.slug}`}
-            className={`${ui.card} p-4 transition hover:-translate-y-0.5 hover:bg-[#1e2d40]`}
+            className={`${ui.card} p-4 transition hover:-translate-y-0.5 hover:bg-[#334155]/50`}
           >
             {item.image_url ? (
               <img
                 src={item.image_url}
                 alt={item.title}
-                className="mb-4 h-44 w-full rounded-xl border border-[#2a3b4f] object-cover"
+                className="mb-4 h-44 w-full rounded-xl border border-[#334155] object-cover"
               />
             ) : null}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

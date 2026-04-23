@@ -222,11 +222,11 @@ export default function WatchlistClient({ updates }: Props) {
                 />
               ) : null}
               <div className="flex items-center gap-2">
-                <Link href={`/game/${item.slug}`} className="text-lg font-semibold text-white hover:text-[#66c0f4]">
+                <Link href={`/game/${item.slug}`} className="text-lg font-semibold text-white hover:text-[#2563eb]">
                   {item.title}
                 </Link>
                 {item.isNew && (
-                  <span className="bg-[#66c0f4] px-2 py-0.5 text-xs font-bold text-[#0b141b]">
+                  <span className="bg-[#2563eb] px-2 py-0.5 text-xs font-bold text-white">
                     NEW
                   </span>
                 )}

@@ -206,7 +206,7 @@ export default function UpdatesDashboard({ updates, onRefresh }: UpdatesDashboar
     >
       <div className="mb-5 grid gap-3 sm:grid-cols-3">
         <div className={`${ui.card} p-4`}>
-          <p className="text-xs uppercase tracking-[0.2em] text-[#8b98a5]">Updates</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-[#94a3b8]">Updates</p>
           <p className="mt-2 text-2xl font-black text-white">{updates.length}</p>
         </div>
         <div className={`${ui.card} p-4`}>
@@ -215,7 +215,7 @@ export default function UpdatesDashboard({ updates, onRefresh }: UpdatesDashboar
         </div>
         <div className={`${ui.card} p-4`}>
           <p className="text-xs uppercase tracking-[0.2em] text-[#8b98a5]">Non lues</p>
-          <p className="mt-2 text-2xl font-black text-[#66c0f4]">{newCount}</p>
+          <p className="mt-2 text-2xl font-black text-[#2563eb]">{newCount}</p>
         </div>
       </div>
 
@@ -333,22 +333,22 @@ export default function UpdatesDashboard({ updates, onRefresh }: UpdatesDashboar
                       <div className="mb-2 flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.15em] text-[#8b98a5]">
                         <span>{item.source}</span>
                         {item.isNew && (
-                          <span className="rounded bg-[#66c0f4] px-2 py-1 text-[10px] font-bold text-[#0b141b]">
+                          <span className="rounded bg-[#2563eb] px-2 py-1 text-[10px] font-bold text-white">
                             NEW
                           </span>
                         )}
                       </div>
                       <Link
                         href={`/game/${item.slug}`}
-                        className="inline-block text-xl font-black text-white hover:text-[#66c0f4]"
+                        className="inline-block text-xl font-black text-white hover:text-[#2563eb]"
                       >
                         {item.title}
                       </Link>
                       <p className="mt-1 text-xs text-[#6f7c88]">{item.slug}</p>
-                      <p className="mt-3 text-sm leading-6 text-[#aeb8c2]">
+                      <p className="mt-3 text-sm leading-6 text-[#94a3b8]">
                         {item.summary || 'Aucun résumé disponible.'}
                       </p>
-                      <p className="mt-3 text-xs text-[#8b98a5]">
+                      <p className="mt-3 text-xs text-[#94a3b8]">
                         {formatDate(item.published_at)}
                       </p>
                     </div>

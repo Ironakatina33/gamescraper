@@ -79,7 +79,7 @@ export default async function GamePage({ params }: Props) {
             <img
               src={detail?.banner_image ?? latest.image_url}
               alt={detail?.title ?? latest.title}
-              className="mb-4 h-56 w-full rounded-xl border border-[#2a3b4f] object-cover md:h-72"
+              className="mb-4 h-56 w-full rounded-xl border border-[#334155] object-cover md:h-72"
             />
           ) : null}
           <p className="text-sm text-[#8b98a5]">Dernière mise à jour</p>
@@ -142,7 +142,7 @@ export default async function GamePage({ params }: Props) {
                   key={src}
                   src={src}
                   alt={detail?.title ?? latest.title}
-                  className="w-full border border-[#263241] object-cover"
+                  className="w-full border border-[#334155] object-cover"
                 />
               ))}
             </div>
@@ -169,17 +169,17 @@ export default async function GamePage({ params }: Props) {
                   href={link.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex flex-col gap-2 rounded-xl border border-[#2a3b4f] bg-[#111821] p-4 transition hover:border-[#66c0f4] hover:bg-[#182230]"
+                  className="flex flex-col gap-2 rounded-xl border border-[#2563eb] bg-[#1e293b] p-4 transition hover:border-[#2563eb] hover:bg-[#2563eb]"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#66c0f4]/20 text-[#66c0f4]">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2563eb]/20 text-[#2563eb]">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                         <polyline points="7 10 12 15 17 10" />
                         <line x1="12" y1="15" x2="12" y2="3" />
                       </svg>
                     </span>
-                    <span className="text-xs font-semibold uppercase tracking-wider text-[#66c0f4]">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-[#2563eb]">
                       {link.host || 'Download'}
                     </span>
                   </div>
@@ -208,7 +208,7 @@ export default async function GamePage({ params }: Props) {
                   href={item.article_url}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-4 inline-block text-sm font-semibold text-[#66c0f4]"
+                  className="mt-4 inline-block text-sm font-semibold text-[#2563eb]"
                 >
                   Ouvrir la source →
                 </a>
