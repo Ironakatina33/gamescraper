@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
 type Theme = 'dark' | 'light';
 
@@ -30,16 +30,7 @@ export function ThemeProvider({ children, defaultTheme = 'dark' }: ThemeProvider
     }
   });
 
-  const [mounted, setMounted] = useState(false);
-
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
-    
     const root = document.documentElement;
     
     if (theme === 'dark') {
@@ -55,7 +46,7 @@ export function ThemeProvider({ children, defaultTheme = 'dark' }: ThemeProvider
     } catch {
       // Ignore storage errors
     }
-  }, [theme, mounted]);
+  }, [theme]);
 
   const toggleTheme = () => {
     setThemeState((prev) => (prev === 'dark' ? 'light' : 'dark'));
@@ -64,10 +55,6 @@ export function ThemeProvider({ children, defaultTheme = 'dark' }: ThemeProvider
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
   };
-
-  if (!mounted) {
-    return <>{children}</>;
-  }
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
