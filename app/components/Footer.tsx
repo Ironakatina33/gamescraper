@@ -32,7 +32,7 @@ export default function Footer() {
               Système
             </p>
             <ul className="mt-4 space-y-2 text-[14px]">
-              <li><Link href="/admin?secret=14102004" className="text-[var(--ink-dim)] hover:text-[var(--ink)]">Admin</Link></li>
+              <li><Link href="/admin" className="text-[var(--ink-dim)] hover:text-[var(--ink)]">Admin</Link></li>
               <li>
                 <a
                   href="https://game3rb.com/"
