@@ -266,3 +266,168 @@ export function parseGameDetail(html: string, articleUrl: string): ParsedGameDet
     download_links,
   };
 }
+
+/**
+ * Parse game detail from IGG Games HTML.
+ * IGG uses schema.org property attributes, UIkit classes,
+ * and inline labels (Developer:, Publisher:, etc.)
+ */
+export function parseIggGameDetail(html: string, articleUrl: string): ParsedGameDetail {
+  const $ = cheerio.load(html);
+
+  const title =
+    clean($('h1[property="headline"]').first().text()) ??
+    clean($('h1.uk-article-title').first().text()) ??
+    clean($('meta[property="name"]').attr('content'));
+
+  // Banner — first .igg-image-content image
+  const banner_image =
+    cleanMediaUrl($('img.igg-image-content').first().attr('src')) ?? null;
+
+  // Screenshots — subsequent .igg-image-content images (skip first = banner)
+  const screenshots = $('img.igg-image-content')
+    .slice(1)
+    .map((_, el) => cleanMediaUrl($(el).attr('src')))
+    .get()
+    .filter((v): v is string => Boolean(v))
+    .filter((v, idx, arr) => arr.indexOf(v) === idx);
+
+  // Trailer
+  const trailer_url =
+    pickFirstAttr($, 'iframe[src*="youtube"], iframe[src*="steam"]', ['src']) ?? null;
+
+  // Meta fields from inline text: "Developer:", "Publisher:", etc.
+  const details: Record<string, string> = {};
+  $('div[property="text"] p').each((_, el) => {
+    const text = $(el).text().replace(/\s+/g, ' ').trim();
+    const metaLabel = $(el).find('span.uk-text-meta').text().replace(':', '').trim().toLowerCase();
+    if (metaLabel) {
+      // Get text after the meta label
+      const fullText = text;
+      const labelIdx = fullText.toLowerCase().indexOf(metaLabel);
+      if (labelIdx !== -1) {
+        const value = fullText.substring(labelIdx + metaLabel.length).replace(/^[\s:]+/, '').trim();
+        if (value) details[metaLabel] = value;
+      }
+    }
+  });
+
+  // About — collect paragraphs between "Game Overview" and "DOWNLOAD LINKS"
+  let about: string | null = null;
+  const aboutParts: string[] = [];
+  let inAbout = false;
+
+  $('div[property="text"]').children().each((_, el) => {
+    const tag = el.tagName?.toLowerCase();
+    const text = $(el).text().replace(/\s+/g, ' ').trim();
+
+    if (tag === 'h2' && /game overview/i.test(text)) {
+      inAbout = true;
+      return;
+    }
+    if (tag === 'h2' && /download/i.test(text)) {
+      inAbout = false;
+      return;
+    }
+    if (inAbout && tag === 'p' && text.length > 30) {
+      // Skip lines that are just meta fields
+      if ($(el).find('span.uk-text-meta').length) return;
+      if ($(el).find('span.uk-label').length) return;
+      aboutParts.push(text);
+    }
+  });
+
+  about = aboutParts.length > 0 ? aboutParts.join('\n\n') : null;
+
+  // Fallback about: use meta description
+  if (!about) {
+    about = clean($('meta[name="description"]').attr('content')) ?? null;
+  }
+
+  // Download links — look for links in the download section
+  const download_links: DownloadLink[] = [];
+  const seenUrls = new Set<string>();
+  let inDownloads = false;
+
+  $('div[property="text"]').children().each((_, el) => {
+    const tag = el.tagName?.toLowerCase();
+    const text = $(el).text().replace(/\s+/g, ' ').trim();
+
+    if (tag === 'h2' && /download/i.test(text)) {
+      inDownloads = true;
+      return;
+    }
+    if (inDownloads && tag === 'p') {
+      $(el).find('a').each((__, a) => {
+        const href = $(a).attr('href');
+        const linkText = $(a).text().trim();
+        if (!href || seenUrls.has(href)) return;
+        // Skip internal igg links that are just ad redirects
+        if (href.includes('igg-games.com/ubfdrnfd')) return;
+        seenUrls.add(href);
+
+        let host = 'External';
+        try {
+          host = new URL(href).hostname.replace('www.', '').split('.')[0];
+        } catch { /* ignore */ }
+
+        download_links.push({
+          url: href,
+          text: linkText || 'Download',
+          host,
+        });
+      });
+    }
+  });
+
+  // System requirements
+  let system_requirements: string | null = null;
+  $('div[property="text"] h2, div[property="text"] h3').each((_, el) => {
+    const txt = $(el).text().trim().toLowerCase();
+    if (txt.includes('system requirement') || txt.includes('minimum')) {
+      const chunks: string[] = [];
+      let node = $(el).next();
+      while (node.length && !['h2', 'h3'].includes(node[0]?.tagName ?? '')) {
+        if (node[0]?.tagName === 'ul') {
+          node.find('li').each((__, li) => {
+            const liText = $(li).text().replace(/\s+/g, ' ').trim();
+            if (liText) chunks.push(`- ${liText}`);
+          });
+        } else {
+          const text = node.text().replace(/\s+/g, ' ').trim();
+          if (text && text.length > 5) chunks.push(text);
+        }
+        node = node.next();
+      }
+      system_requirements = chunks.length ? chunks.join('\n') : null;
+    }
+  });
+
+  return {
+    article_url: articleUrl,
+    title: title ?? null,
+    banner_image,
+    screenshots,
+    trailer_url,
+    about,
+    release_name: null,
+    release_size: null,
+    developer: details['developer'] ?? details['developers'] ?? null,
+    publisher: details['publisher'] ?? null,
+    release_date: details['release date'] ?? null,
+    genre: details['genre'] ?? null,
+    reviews: null,
+    system_requirements,
+    download_links,
+  };
+}
+
+/**
+ * Auto-detect source and parse game detail accordingly
+ */
+export function parseGameDetailAuto(html: string, articleUrl: string): ParsedGameDetail {
+  if (articleUrl.includes('igg-games.com')) {
+    return parseIggGameDetail(html, articleUrl);
+  }
+  return parseGameDetail(html, articleUrl);
+}

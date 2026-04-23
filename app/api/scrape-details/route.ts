@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { parseGameDetail } from "@/lib/parseGameDetail";
+import { parseGameDetailAuto } from "@/lib/parseGameDetail";
 
 function getSupabaseAdminClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
             Accept:
               "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
             "Accept-Language": "en-US,en;q=0.9,fr;q=0.8",
-            Referer: "https://game3rb.com/",
+            Referer: game.article_url.includes('igg-games.com') ? 'https://igg-games.com/' : 'https://game3rb.com/',
           },
           cache: "no-store",
         });
@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
         }
 
         const html = await response.text();
-        const parsed = parseGameDetail(html, game.article_url);
+        const parsed = parseGameDetailAuto(html, game.article_url);
         const hasMeaningfulData =
           Boolean(parsed.about) ||
           Boolean(parsed.banner_image) ||

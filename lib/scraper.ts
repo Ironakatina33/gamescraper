@@ -261,6 +261,130 @@ export function parseGenericHtml(
 }
 
 /**
+ * Configuration for igg-games.com
+ * Uses schema.org property attributes and UIkit markup
+ */
+export const iggConfig: ScraperConfig = {
+  baseUrl: 'https://igg-games.com/',
+  itemSelectors: [
+    'article.uk-article',
+    'article[typeof="Article"]',
+    'article',
+  ],
+  titleSelectors: [
+    'h2[property="headline"] a',
+    'h1[property="headline"]',
+    'h2.uk-article-title a',
+    'h1.uk-article-title',
+  ],
+  linkSelectors: [
+    'h2[property="headline"] a',
+    'h2.uk-article-title a',
+    'div[property="image"] a',
+  ],
+  imageSelectors: [
+    'div[property="image"] meta[property="url"]',
+    'div[property="image"] img',
+    'img.igg-image-content',
+  ],
+  summarySelectors: [
+    'div[property="text"]',
+    '.uk-margin-medium-top[property="text"]',
+  ],
+  timeSelectors: [
+    'time[datetime]',
+    'meta[property="datePublished"]',
+  ],
+  source: 'IGGGames',
+};
+
+/**
+ * Parse IGG Games HTML — specialised parser because IGG uses
+ * schema.org `property` attributes and meta tags for images
+ * instead of standard src attributes.
+ */
+export function parseIggHtml(html: string): ScrapedGame[] {
+  const $ = cheerio.load(html);
+  const results: ScrapedGame[] = [];
+
+  $('article.uk-article, article[typeof="Article"]').each((_: number, el: any) => {
+    const $el = $(el);
+
+    // Title — from meta property="name" first, then h2/h1
+    const title =
+      $el.find('meta[property="name"]').attr('content')?.trim() ||
+      $el.find('h2[property="headline"] a').first().text().trim() ||
+      $el.find('h1[property="headline"]').first().text().trim();
+
+    if (!title) return;
+
+    // Clean title: remove " Free Download" suffix and emojis for slug
+    const cleanTitle = title
+      .replace(/\s*Free Download.*$/i, '')
+      .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '')
+      .trim();
+
+    // Link
+    const article_url =
+      $el.find('h2[property="headline"] a').attr('href') ||
+      $el.find('h1[property="headline"] a').attr('href') ||
+      $el.find('div[property="image"] a').attr('href');
+
+    if (!article_url) return;
+
+    const fullUrl = article_url.startsWith('http')
+      ? article_url
+      : new URL(article_url, iggConfig.baseUrl).href;
+
+    // Image — IGG stores the thumbnail in a <meta property="url"> inside the image div
+    let image_url: string | null =
+      $el.find('div[property="image"] meta[property="url"]').attr('content')?.trim() || null;
+
+    // Fallback: try img tags
+    if (!image_url) {
+      image_url =
+        $el.find('div[property="image"] img').attr('src')?.trim() ||
+        $el.find('div[property="image"] img').attr('data-src')?.trim() ||
+        null;
+    }
+
+    // Get full-size image (remove -210x210 thumbnail suffix)
+    if (image_url) {
+      image_url = image_url.replace(/-\d+x\d+(\.\w+)$/, '$1');
+      if (!image_url.startsWith('http')) {
+        image_url = new URL(image_url, iggConfig.baseUrl).href;
+      }
+    }
+
+    // Date
+    const dateStr =
+      $el.find('time[datetime]').attr('datetime')?.trim() ||
+      $el.find('meta[property="datePublished"]').attr('content')?.trim() ||
+      null;
+
+    // Summary — the text div
+    let summary =
+      $el.find('div[property="text"]').text().replace(/\s+/g, ' ').trim() || null;
+
+    if (summary && summary.length > 300) {
+      summary = summary.substring(0, 297) + '...';
+    }
+
+    results.push({
+      title,
+      slug: slugify(cleanTitle || title),
+      source: iggConfig.source,
+      article_url: fullUrl,
+      image_url: cleanImageUrl(image_url),
+      summary,
+      published_at: dateStr || new Date().toISOString(),
+    });
+  });
+
+  return results;
+}
+
+/**
  * Try multiple configurations to parse HTML
  * @param html - Raw HTML content
  * @param baseUrl - Base URL for resolving relative links

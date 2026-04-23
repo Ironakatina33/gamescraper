@@ -137,6 +137,23 @@ export default function AdminPage() {
     setIsLoading(false);
   }
 
+  async function scrapeIgg() {
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/sync-igg', {
+        headers: { Authorization: `Bearer 14102004` },
+      });
+      const data = await res.json();
+      if (data.ok) {
+        showMsg(`IGG Games: ${data.found || 0} jeux trouvés, ${data.inserted || 0} insérés (${data.pages_scraped} pages)`);
+        loadStats();
+      } else {
+        showMsg(data.error || 'Erreur de scraping IGG', 'error');
+      }
+    } catch { showMsg('Erreur de connexion', 'error'); }
+    setIsLoading(false);
+  }
+
   async function addSampleData() {
     setIsLoading(true);
     try {
@@ -345,11 +362,13 @@ export default function AdminPage() {
             <div className="grid gap-0 md:grid-cols-2 border-t border-l border-[#1a1b23]">
               <ActionCard num="01" title="Scraper Game3Rb" body="Lance une passe complète sur game3rb.com et sauvegarde les nouveautés en base."
                 button={<button onClick={scrapeData} disabled={isLoading} className={buttonPrimary}>{isLoading ? 'Scraping...' : 'Lancer le scrape ↗'}</button>} />
-              <ActionCard num="02" title="Scraper les détails" body="Récupère pour chaque update les infos structurées (trailer, config, screenshots, liens)."
+              <ActionCard num="02" title="Scraper IGG Games" body="Scrape les 3 premières pages d'igg-games.com et sauvegarde les nouveautés en base."
+                button={<button onClick={scrapeIgg} disabled={isLoading} className={buttonPrimary}>{isLoading ? 'Scraping IGG...' : 'Scraper IGG ↗'}</button>} />
+              <ActionCard num="03" title="Scraper les détails" body="Récupère pour chaque update les infos structurées (trailer, config, screenshots, liens)."
                 button={<button onClick={scrapeDetails} disabled={isLoading} className={buttonSecondary}>{isLoading ? 'Scraping...' : 'Détails structurés'}</button>} />
-              <ActionCard num="03" title="Seed de démo" body="Injecte des données d'exemple pour tester l'interface sans scraper."
+              <ActionCard num="04" title="Seed de démo" body="Injecte des données d'exemple pour tester l'interface sans scraper."
                 button={<button onClick={addSampleData} disabled={isLoading} className={buttonSecondary}>{isLoading ? 'Chargement...' : 'Ajouter seed'}</button>} />
-              <ActionCard num="04" title="Cache local" body="Efface la watchlist + statut lu + thème stockés dans ce navigateur. Irréversible." danger
+              <ActionCard num="05" title="Cache local" body="Efface la watchlist + statut lu + thème stockés dans ce navigateur. Irréversible." danger
                 button={<button onClick={clearCache} disabled={isLoading} className={buttonDanger}>Vider le cache</button>} />
             </div>
           )}

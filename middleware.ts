@@ -7,7 +7,7 @@ const CRON_SECRET = process.env.CRON_SECRET || '14102004';
 
 // Protected routes
 const PROTECTED_ROUTES = ['/admin'];
-const PROTECTED_API_ROUTES = ['/api/admin', '/api/sync', '/api/admin/games'];
+const PROTECTED_API_ROUTES = ['/api/admin', '/api/sync', '/api/sync-igg', '/api/admin/games'];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
