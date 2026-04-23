@@ -359,19 +359,43 @@ export function parseIggGameDetail(html: string, articleUrl: string): ParsedGame
       inDownloads = true;
       return;
     }
+    // Stop collecting links when we hit System Requirement or another major section
+    if (tag === 'h2' && inDownloads && /system require|how to install/i.test(text)) {
+      inDownloads = false;
+      return;
+    }
     if (inDownloads && tag === 'p') {
+      // Extract host name from bold label: "Link Mega.nz:", "Link GoFile:", etc.
+      const boldText = $(el).find('b').first().text().trim();
+      let hostFromLabel: string | null = null;
+      const labelMatch = boldText.match(/^Link\s+(.+?):/i);
+      if (labelMatch) {
+        hostFromLabel = labelMatch[1].trim();
+      }
+
       $(el).find('a').each((__, a) => {
         const href = $(a).attr('href');
         const linkText = $(a).text().trim();
         if (!href || seenUrls.has(href)) return;
-        // Skip internal igg links that are just ad redirects
+        // Skip internal igg links (ads, faq, install guides, requests)
         if (href.includes('igg-games.com/ubfdrnfd')) return;
+        if (href.includes('igg-games.com/how-to-install')) return;
+        if (href.includes('igg-games.com/pc-game-request')) return;
+        if (href.includes('igg-games.com/if-')) return;
+        if (href.includes('igg-games.com/request-')) return;
         seenUrls.add(href);
 
-        let host = 'External';
-        try {
-          host = new URL(href).hostname.replace('www.', '').split('.')[0];
-        } catch { /* ignore */ }
+        // Use the label-extracted host name if available, otherwise parse from URL
+        let host = hostFromLabel || 'External';
+        if (!hostFromLabel) {
+          try {
+            const hostname = new URL(href).hostname.replace('www.', '');
+            // Don't use redirector domains as host name
+            if (!/urlbluemedia|url-generator/i.test(hostname)) {
+              host = hostname.split('.')[0];
+            }
+          } catch { /* ignore */ }
+        }
 
         download_links.push({
           url: href,

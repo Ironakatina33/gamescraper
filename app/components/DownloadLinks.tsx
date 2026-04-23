@@ -10,25 +10,32 @@ interface DownloadLink {
 
 const HOST_PRIORITY: Record<string, number> = {
   'mega': 1,
+  'megaup': 1,
   'mediafire': 2,
   'drive': 3,
   'google': 3,
+  'gofile': 4,
+  'pixeldrain': 4,
+  'qiwi': 4,
+  'mixdrop': 4,
   'thenewscasts': 4,
   'torrent': 5,
+  'buzzheavier': 5,
+  'krakenfiles': 5,
+  'sendcm': 5,
+  'bowfile': 5,
+  'clicknupload': 6,
   '1fichier': 6,
   'uptobox': 7,
   'rapidgator': 8,
-  'qiwi': 4,
-  'buzzheavier': 5,
-  'krakenfiles': 5,
-  'gofile': 4,
-  'pixeldrain': 4,
 };
 
 const HOST_LABELS: Record<string, string> = {
   'thenewscasts': 'Download',
   'likegames': 'Download',
   'External Link': 'Download',
+  'External': 'Download',
+  'pcgamestorrents': 'Torrent',
 };
 
 function hostPriority(host: string): number {
