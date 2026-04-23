@@ -143,14 +143,23 @@ export default function WatchlistClient({ updates }: Props) {
 
   if (watched.length === 0) {
     return (
-      <div className={`${ui.card} p-6 text-[#8b98a5]`}>
-        <p className="mb-4">Aucun jeu suivi localement. Ajoute des jeux depuis la page des mises à jour.</p>
-        <div className="flex gap-3">
+      <div className="border border-dashed border-[var(--line-strong)] p-12 md:p-16 text-center">
+        <p className="mono text-[11px] uppercase tracking-[0.2em] text-[var(--ink-muted)] mb-4">
+          — Watchlist vide —
+        </p>
+        <p className="text-[var(--ink-dim)] mb-6 max-w-md mx-auto">
+          Tu ne suis aucun jeu pour l&apos;instant. Ajoute-en depuis la page
+          des updates, ou importe une watchlist existante.
+        </p>
+        <div className="flex flex-wrap justify-center gap-3">
+          <Link href="/updates" className={ui.buttonPrimary}>
+            Parcourir les updates →
+          </Link>
           <button
             onClick={() => fileInputRef.current?.click()}
             className={ui.buttonSecondary}
           >
-            Importer une watchlist
+            Importer un .json
           </button>
           <input
             ref={fileInputRef}
@@ -165,23 +174,39 @@ export default function WatchlistClient({ updates }: Props) {
   }
 
   return (
-    <div className="grid gap-3">
-      <div className={`${ui.cardSoft} flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between`}>
-        <p className="text-sm text-[#8b98a5]">
-          {watched.length} jeu{watched.length > 1 ? 'x' : ''} suivi{watched.length > 1 ? 's' : ''}
-        </p>
+    <div>
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 pb-4 border-b border-[var(--line)]">
+        <div className="flex items-end gap-6">
+          <div>
+            <p className="mono text-[10px] uppercase tracking-[0.2em] text-[var(--ink-muted)] mb-1">
+              Jeux suivis
+            </p>
+            <p className="mono text-3xl text-[var(--ink)]">
+              {watched.length.toString().padStart(2, '0')}
+            </p>
+          </div>
+          <div className="border-l border-[var(--line)] pl-6">
+            <p className="mono text-[10px] uppercase tracking-[0.2em] text-[var(--ink-muted)] mb-1">
+              Non lues
+            </p>
+            <p className={`mono text-3xl ${newCount > 0 ? 'text-[var(--brand-hi)]' : 'text-[var(--ink)]'}`}>
+              {newCount.toString().padStart(2, '0')}
+            </p>
+          </div>
+        </div>
         <div className="flex flex-wrap gap-2">
-          <button
-            onClick={exportWatchlist}
-            className={ui.buttonSecondary}
-          >
-            Exporter
+          <button onClick={markAllAsSeen} disabled={newCount === 0} className={`${ui.buttonGhost} border border-[var(--line-strong)] disabled:opacity-40 disabled:cursor-not-allowed`}>
+            Tout marquer lu
+          </button>
+          <button onClick={exportWatchlist} className={ui.buttonSecondary}>
+            ↓ Exporter
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
             className={ui.buttonSecondary}
           >
-            Importer
+            ↑ Importer
           </button>
           <input
             ref={fileInputRef}
@@ -192,68 +217,71 @@ export default function WatchlistClient({ updates }: Props) {
           />
         </div>
       </div>
-      <div className={`${ui.cardSoft} flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between`}>
-        <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-[#8b98a5]">
-            Nouveautés watchlist
-          </p>
-          <p className="mt-1 text-sm text-white">
-            {newCount} mise{newCount > 1 ? 's' : ''} à jour non lue{newCount > 1 ? 's' : ''}
-          </p>
-        </div>
-        <button
-          onClick={markAllAsSeen}
-          className={ui.buttonSecondary}
-          disabled={newCount === 0}
-        >
-          Tout marquer comme lu
-        </button>
-      </div>
 
-      {watchedWithStatus.map((item) => (
-        <div key={item.slug} className={`${ui.card} p-4`}>
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="min-w-0">
+      {/* List */}
+      <ul className="divide-y divide-[var(--line)]">
+        {watchedWithStatus.map((item, idx) => (
+          <li
+            key={item.slug}
+            className="group grid gap-5 py-5 md:grid-cols-[40px_140px_1fr_auto] md:items-center hover:bg-[var(--bg-elev)] transition-colors -mx-3 px-3"
+          >
+            <span className="mono text-[11px] text-[var(--ink-muted)]">
+              {(idx + 1).toString().padStart(3, '0')}
+            </span>
+            <Link
+              href={`/game/${item.slug}`}
+              className="relative block h-[80px] w-full md:w-[140px] overflow-hidden border border-[var(--line)] bg-[var(--bg-elev)]"
+            >
               {item.image_url ? (
                 <img
                   src={item.image_url}
-                  alt={item.title}
-                  className="mb-3 h-28 w-full max-w-md rounded-lg border border-[#2a3b4f] object-cover"
+                  alt=""
+                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
-              ) : null}
-              <div className="flex items-center gap-2">
-                <Link href={`/game/${item.slug}`} className="text-lg font-semibold text-white hover:text-[#2563eb]">
-                  {item.title}
-                </Link>
-                {item.isNew && (
-                  <span className="bg-[#2563eb] px-2 py-0.5 text-xs font-bold text-white">
-                    NEW
-                  </span>
-                )}
-              </div>
-              <p className="mt-1 text-sm text-[#8b98a5]">{item.slug}</p>
-              <p className="mt-1 text-xs uppercase tracking-[0.15em] text-[#6f7c88]">
+              ) : (
+                <div className="grid h-full place-items-center mono text-[10px] uppercase text-[var(--ink-muted)]">
+                  no image
+                </div>
+              )}
+              {item.isNew && (
+                <span className="absolute top-1.5 left-1.5 mono text-[9px] uppercase tracking-[0.2em] bg-[var(--brand)] text-white px-1.5 py-0.5">
+                  New
+                </span>
+              )}
+            </Link>
+            <div className="min-w-0">
+              <p className="mono text-[10px] uppercase tracking-[0.18em] text-[var(--brand-hi)] mb-1.5">
                 {item.source}
               </p>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => markAsSeen(item.slug, item.published_at)}
-                className={ui.buttonSecondary}
+              <Link
+                href={`/game/${item.slug}`}
+                className="text-[16px] font-medium tracking-[-0.01em] text-[var(--ink)] hover:text-[var(--brand-hi)] transition-colors"
               >
-                Marquer vu
-              </button>
+                {item.title}
+              </Link>
+              <p className="mt-1 mono text-[11px] text-[var(--ink-muted)]">
+                {item.slug}
+              </p>
+            </div>
+            <div className="flex gap-2 shrink-0">
+              {item.isNew && (
+                <button
+                  onClick={() => markAsSeen(item.slug, item.published_at)}
+                  className="text-[12px] py-2 px-3 text-[var(--ink-dim)] hover:text-[var(--ink)] border border-[var(--line-strong)] hover:border-[var(--ink-dim)] transition-colors"
+                >
+                  ✓ Lu
+                </button>
+              )}
               <button
                 onClick={() => remove(item.slug)}
-                className={ui.buttonWatchRemove}
+                className="text-[12px] py-2 px-3 text-[var(--bad)] hover:bg-[var(--bad)]/10 border border-[var(--bad)]/30 transition-colors"
               >
-                Retirer
+                − Retirer
               </button>
             </div>
-          </div>
-        </div>
-      ))}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

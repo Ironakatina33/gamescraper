@@ -56,20 +56,21 @@ export function Pagination({
   const visiblePages = getVisiblePages();
 
   return (
-    <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
-      <p className="text-sm text-[#8b98a5]">
-        Affichage de {startItem} à {endItem} sur {totalItems} résultats
+    <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <p className="mono text-[11px] uppercase tracking-[0.18em] text-[var(--ink-muted)]">
+        <span className="text-[var(--ink)]">{startItem}–{endItem}</span>
+        <span> sur {totalItems}</span>
       </p>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-0">
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
           className={cx(
-            'rounded-lg px-3 py-2 text-sm transition',
+            'mono text-[12px] px-3 py-2 border border-[var(--line-strong)] transition-colors',
             currentPage === 1
-              ? 'cursor-not-allowed bg-[#1a2838] text-[#5a6a7a]'
-              : 'bg-[#24364a] text-white hover:bg-[#2d455d]'
+              ? 'cursor-not-allowed text-[var(--ink-muted)] opacity-40'
+              : 'text-[var(--ink)] hover:bg-[var(--bg-elev)] hover:border-[var(--ink-dim)]'
           )}
           aria-label="Page précédente"
         >
@@ -82,12 +83,12 @@ export function Pagination({
             onClick={() => typeof page === 'number' && onPageChange(page)}
             disabled={page === '...'}
             className={cx(
-              'min-w-[40px] rounded-lg px-3 py-2 text-sm transition',
+              'mono text-[12px] min-w-[40px] px-3 py-2 border-t border-b border-r border-[var(--line-strong)] transition-colors',
               page === currentPage
-                ? 'bg-[#66c0f4] font-semibold text-[#0b141b]'
+                ? 'bg-[var(--brand)] text-white border-[var(--brand)]'
                 : page === '...'
-                  ? 'cursor-default bg-transparent text-[#8b98a5]'
-                  : 'bg-[#1a2838] text-white hover:bg-[#2d455d]'
+                  ? 'cursor-default text-[var(--ink-muted)]'
+                  : 'text-[var(--ink-dim)] hover:text-[var(--ink)] hover:bg-[var(--bg-elev)]'
             )}
           >
             {page}
@@ -98,10 +99,10 @@ export function Pagination({
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
           className={cx(
-            'rounded-lg px-3 py-2 text-sm transition',
+            'mono text-[12px] px-3 py-2 border-t border-b border-r border-[var(--line-strong)] transition-colors',
             currentPage === totalPages
-              ? 'cursor-not-allowed bg-[#1a2838] text-[#5a6a7a]'
-              : 'bg-[#24364a] text-white hover:bg-[#2d455d]'
+              ? 'cursor-not-allowed text-[var(--ink-muted)] opacity-40'
+              : 'text-[var(--ink)] hover:bg-[var(--bg-elev)] hover:border-[var(--ink-dim)]'
           )}
           aria-label="Page suivante"
         >

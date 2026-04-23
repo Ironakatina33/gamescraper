@@ -95,32 +95,48 @@ export function AutoRefreshToggle({
   };
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm p-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-white">Auto-refresh</p>
-          <p className="text-xs text-blue-200/70">
-            Actualisation toutes les {intervalMinutes} min
-          </p>
-        </div>
-        <button
-          onClick={onToggle}
-          className={`relative h-7 w-13 rounded-full transition-all duration-300 ${
-            enabled ? 'bg-gradient-to-r from-blue-500 to-blue-600 shadow-lg shadow-blue-500/25' : 'bg-white/10'
-          }`}
-          aria-label={enabled ? 'Désactiver auto-refresh' : 'Activer auto-refresh'}
-        >
+    <div className="border border-[var(--line-strong)] bg-[var(--bg-card)]">
+      <button
+        onClick={onToggle}
+        className="flex w-full items-center justify-between px-3 py-3 hover:bg-[var(--bg-elev)] transition-colors"
+        aria-label={enabled ? 'Désactiver auto-refresh' : 'Activer auto-refresh'}
+      >
+        <div className="flex items-center gap-2">
           <span
-            className={`absolute left-1 top-1 h-5 w-5 rounded-full bg-white transition-all duration-300 shadow-md ${
-              enabled ? 'translate-x-6' : 'translate-x-0'
+            className={`inline-block h-2 w-2 rounded-full transition-colors ${
+              enabled ? 'bg-[var(--good)] live-dot' : 'bg-[var(--ink-muted)]'
             }`}
           />
-        </button>
-      </div>
+          <span className="text-[13px] font-medium text-[var(--ink)]">
+            {enabled ? 'Actif' : 'Inactif'}
+          </span>
+        </div>
+        <span
+          className={`relative inline-flex h-5 w-9 items-center border ${
+            enabled ? 'bg-[var(--brand)] border-[var(--brand)]' : 'bg-transparent border-[var(--line-strong)]'
+          }`}
+        >
+          <span
+            className={`inline-block h-[13px] w-[13px] bg-white transition-transform duration-200 ${
+              enabled ? 'translate-x-[18px]' : 'translate-x-[2px]'
+            }`}
+          />
+        </span>
+      </button>
       {enabled && (
-        <div className="flex justify-between text-xs text-blue-200/70 pt-2 border-t border-white/5">
-          <span>Dernière: {formatTime(lastRefresh)}</span>
-          <span>Prochaine: {formatTime(nextRefresh)}</span>
+        <div className="px-3 py-2 border-t border-[var(--line)] mono text-[10px] uppercase tracking-[0.15em] text-[var(--ink-muted)] space-y-1">
+          <div className="flex justify-between">
+            <span>Last</span>
+            <span className="text-[var(--ink-dim)]">{formatTime(lastRefresh)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Next</span>
+            <span className="text-[var(--ink-dim)]">{formatTime(nextRefresh)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Every</span>
+            <span className="text-[var(--ink-dim)]">{intervalMinutes}m</span>
+          </div>
         </div>
       )}
     </div>

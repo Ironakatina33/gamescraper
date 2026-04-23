@@ -1,41 +1,47 @@
 export const ui = {
-  page: 'min-h-screen bg-gradient-to-br from-slate-900 via-blue-900/20 to-slate-900 text-[#e5e5e5]',
+  page: 'min-h-screen bg-[var(--bg)] text-[var(--ink)]',
   topbar:
-    'sticky top-0 z-30 border-b border-white/10 bg-slate-900/80 backdrop-blur-xl shadow-lg',
-  section: 'border-b border-white/10 bg-gradient-to-r from-slate-800/50 to-blue-800/30 backdrop-blur-sm',
-  container: 'mx-auto max-w-[1400px] px-6',
-  pageContent: 'mx-auto max-w-[1400px] px-6 py-8',
+    'sticky top-0 z-40 border-b border-[var(--line)] bg-[var(--bg)]/85 backdrop-blur-xl',
+  section: 'border-b border-[var(--line)] bg-[var(--bg-elev)]',
+  container: 'mx-auto max-w-[1320px] px-5 md:px-8',
+  pageContent: 'mx-auto max-w-[1320px] px-5 md:px-8 py-10',
 
-  card: 'rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-md shadow-xl hover:shadow-2xl transition-all duration-300',
-  cardSoft: 'rounded-2xl border border-white/5 bg-white/[0.02] backdrop-blur-sm',
-  rowHover: 'transition-all duration-300 hover:bg-white/5 hover:backdrop-blur-sm',
+  card: 'border border-[var(--line)] bg-[var(--bg-card)]',
+  cardSoft: 'border border-[var(--line)] bg-[var(--bg-elev)]',
+  rowHover: 'transition-colors duration-200 hover:bg-[var(--bg-elev)]',
 
-  title: 'text-2xl font-semibold text-white md:text-3xl bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent',
-  subtitle: 'mt-2 text-sm text-blue-200/70',
-  label: 'mb-2 block text-sm text-blue-200/80 font-medium',
+  title: 'text-[2rem] md:text-[2.6rem] font-medium tracking-[-0.02em] leading-[1.05] text-[var(--ink)]',
+  subtitle: 'mt-3 text-[15px] leading-relaxed text-[var(--ink-dim)] max-w-prose',
+  label: 'mb-2 block text-[11px] uppercase tracking-[0.15em] text-[var(--ink-muted)] font-medium',
   sectionTitle:
-    'mb-4 text-xs font-semibold uppercase tracking-wider bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent',
+    'text-[11px] font-medium uppercase tracking-[0.2em] text-[var(--ink-muted)]',
 
   input:
-    'w-full rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm px-4 py-3 text-sm text-white outline-none placeholder:text-blue-200/50 focus:border-blue-400/50 focus:bg-white/10 focus:ring-2 focus:ring-blue-400/20 transition-all duration-300',
+    'w-full border border-[var(--line)] bg-[var(--bg-elev)] px-4 py-3 text-sm text-[var(--ink)] outline-none placeholder:text-[var(--ink-muted)] focus:border-[var(--brand)] transition-colors',
   select:
-    'w-full rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm px-4 py-3 text-sm text-white outline-none focus:border-blue-400/50 focus:bg-white/10 focus:ring-2 focus:ring-blue-400/20 transition-all duration-300',
+    'w-full border border-[var(--line)] bg-[var(--bg-elev)] px-4 py-3 text-sm text-[var(--ink)] outline-none focus:border-[var(--brand)] transition-colors appearance-none',
 
   buttonPrimary:
-    'rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-3 text-sm font-medium text-white shadow-lg hover:shadow-blue-500/25 hover:from-blue-600 hover:to-blue-700 transition-all duration-300 hover:-translate-y-0.5',
+    'inline-flex items-center justify-center gap-2 bg-[var(--brand)] px-5 py-3 text-sm font-medium text-white hover:bg-[var(--brand-hi)] transition-colors',
   buttonSecondary:
-    'rounded-xl bg-white/10 backdrop-blur-sm px-6 py-3 text-sm font-medium text-white border border-white/20 hover:bg-white/20 hover:border-white/30 transition-all duration-300 hover:-translate-y-0.5',
+    'inline-flex items-center justify-center gap-2 bg-transparent px-5 py-3 text-sm font-medium text-[var(--ink)] border border-[var(--line-strong)] hover:border-[var(--ink-dim)] hover:bg-[var(--bg-elev)] transition-colors',
+  buttonGhost:
+    'inline-flex items-center justify-center gap-2 bg-transparent px-3 py-2 text-sm font-medium text-[var(--ink-dim)] hover:text-[var(--ink)] transition-colors',
   buttonWatchAdd:
-    'rounded-xl bg-gradient-to-r from-emerald-500/20 to-emerald-600/20 backdrop-blur-sm px-6 py-3 text-sm font-medium text-emerald-300 border border-emerald-400/30 hover:bg-emerald-500/30 hover:border-emerald-400/50 transition-all duration-300',
+    'inline-flex items-center justify-center gap-2 bg-transparent px-5 py-3 text-sm font-medium text-[var(--ink)] border border-[var(--line-strong)] hover:border-[var(--brand)] hover:text-[var(--brand-hi)] transition-colors',
   buttonWatchRemove:
-    'rounded-xl bg-gradient-to-r from-red-500/20 to-red-600/20 backdrop-blur-sm px-6 py-3 text-sm font-medium text-red-300 border border-red-400/30 hover:bg-red-500/30 hover:border-red-400/50 transition-all duration-300',
+    'inline-flex items-center justify-center gap-2 bg-transparent px-5 py-3 text-sm font-medium text-[var(--bad)] border border-[var(--bad)]/30 hover:bg-[var(--bad)]/10 transition-colors',
 
   navActive:
-    'rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-2 text-sm font-medium text-white shadow-lg',
+    'relative px-4 py-2 text-sm font-medium text-[var(--ink)] after:absolute after:left-4 after:right-4 after:-bottom-[17px] after:h-[1px] after:bg-[var(--brand)]',
   navInactive:
-    'rounded-xl bg-transparent px-4 py-2 text-sm text-blue-200/70 transition-all duration-300 hover:bg-white/10 hover:text-white',
+    'px-4 py-2 text-sm text-[var(--ink-dim)] hover:text-[var(--ink)] transition-colors',
   heroBadge:
-    'inline-flex items-center gap-2 rounded-full border border-blue-400/30 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 px-4 py-2 text-xs uppercase tracking-wider text-blue-300 backdrop-blur-sm',
+    'inline-flex items-center gap-2 border border-[var(--line-strong)] bg-[var(--bg-elev)] px-3 py-1.5 text-[11px] uppercase tracking-[0.2em] text-[var(--ink-dim)]',
+
+  kicker:
+    'text-[11px] font-medium uppercase tracking-[0.2em] text-[var(--brand-hi)]',
+  meta: 'text-[12px] text-[var(--ink-muted)] mono',
 };
 
 export function cx(...classes: Array<string | false | null | undefined>) {

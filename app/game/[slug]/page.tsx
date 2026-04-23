@@ -71,119 +71,167 @@ export default async function GamePage({ params }: Props) {
     }
   }
 
+  const hasInfos = Boolean(
+    detail?.release_name ||
+      detail?.release_size ||
+      detail?.developer ||
+      detail?.publisher ||
+      detail?.release_date ||
+      detail?.genre ||
+      detail?.reviews
+  );
+
   return (
-    <AppShell title={latest.title} subtitle={`Historique complet du jeu • ${latest.slug}`}>
-      <div className="grid gap-4">
-        <div className={`${ui.card} p-5`}>
-          {detail?.banner_image || latest.image_url ? (
-            <img
-              src={detail?.banner_image ?? latest.image_url}
-              alt={detail?.title ?? latest.title}
-              className="mb-4 h-56 w-full rounded-xl border border-[#334155] object-cover md:h-72"
-            />
-          ) : null}
-          <p className="text-sm text-[#8b98a5]">Dernière mise à jour</p>
-          <h2 className="mt-2 text-2xl font-bold text-white">
-            {detail?.title ?? latest.title}
-          </h2>
-          <p className="mt-3 text-[#c7d5e0]">
-            {detail?.about || latest.summary || 'Aucun résumé disponible.'}
-          </p>
-
-          <div className="mt-4 flex flex-wrap gap-3">
-            <a
-              href={latest.article_url}
-              target="_blank"
-              rel="noreferrer"
-              className={ui.buttonPrimary}
-            >
-              Voir la source originale
-            </a>
-            <WatchlistToggleButton slug={latest.slug} />
-          </div>
+    <AppShell
+      kicker={`Fiche · ${latest.slug}`}
+      title={latest.title}
+      subtitle={`${data.length} update${data.length > 1 ? 's' : ''} tracké${data.length > 1 ? 'es' : 'e'} depuis ${latest.source}.`}
+      eyebrow={
+        <div className="flex items-center gap-4 md:border-l md:border-[var(--line)] md:pl-8">
+          <WatchlistToggleButton slug={latest.slug} />
         </div>
-
-        {(detail?.release_name ||
-          detail?.release_size ||
-          detail?.developer ||
-          detail?.publisher ||
-          detail?.release_date ||
-          detail?.genre ||
-          detail?.reviews) && (
-          <section className="grid gap-4 lg:grid-cols-2">
-            <div className={`${ui.card} p-5`}>
-              <h3 className="text-xl font-bold text-white">Infos</h3>
-              <div className="mt-4 space-y-2 text-sm text-[#c7d5e0]">
-                <p><strong>Nom:</strong> {detail?.release_name ?? '—'}</p>
-                <p><strong>Taille:</strong> {detail?.release_size ?? '—'}</p>
-                <p><strong>Développeur:</strong> {detail?.developer ?? '—'}</p>
-                <p><strong>Éditeur:</strong> {detail?.publisher ?? '—'}</p>
-                <p><strong>Date:</strong> {detail?.release_date ?? '—'}</p>
-                <p><strong>Genre:</strong> {detail?.genre ?? '—'}</p>
-                <p><strong>Avis:</strong> {detail?.reviews ?? '—'}</p>
-              </div>
+      }
+    >
+      <div className="space-y-16">
+        {/* HERO */}
+        <section className="grid gap-8 lg:grid-cols-[1.4fr_1fr]">
+          {detail?.banner_image || latest.image_url ? (
+            <div className="relative aspect-[16/9] overflow-hidden border border-[var(--line)] bg-[var(--bg-elev)]">
+              <img
+                src={detail?.banner_image ?? latest.image_url}
+                alt={detail?.title ?? latest.title}
+                className="h-full w-full object-cover"
+              />
             </div>
+          ) : (
+            <div className="aspect-[16/9] border border-dashed border-[var(--line-strong)] grid place-items-center">
+              <p className="mono text-[11px] uppercase tracking-[0.2em] text-[var(--ink-muted)]">
+                no image
+              </p>
+            </div>
+          )}
 
-            <div className={`${ui.card} p-5`}>
-              <h3 className="text-xl font-bold text-white">Configuration</h3>
-              <pre className="mt-4 whitespace-pre-wrap text-sm text-[#c7d5e0]">
-                {detail?.system_requirements ?? 'Aucune donnée'}
-              </pre>
+          <div className="space-y-5">
+            <p className="mono text-[11px] uppercase tracking-[0.2em] text-[var(--brand-hi)] flex items-center gap-3">
+              <span className="inline-block h-[1px] w-8 bg-[var(--brand)]" />
+              {latest.source} · {formatDate(latest.published_at)}
+            </p>
+            <h2 className="text-2xl md:text-3xl font-medium leading-tight tracking-[-0.02em]">
+              {detail?.title ?? latest.title}
+            </h2>
+            <p className="text-[15px] leading-relaxed text-[var(--ink-dim)]">
+              {detail?.about || latest.summary || 'Aucun résumé disponible.'}
+            </p>
+            <div className="pt-4 flex flex-wrap gap-3">
+              <a
+                href={latest.article_url}
+                target="_blank"
+                rel="noreferrer"
+                className={ui.buttonPrimary}
+              >
+                Source originale ↗
+              </a>
+              <WatchlistToggleButton slug={latest.slug} />
+            </div>
+          </div>
+        </section>
+
+        {/* INFOS + SYSREQ */}
+        {(hasInfos || detail?.system_requirements) && (
+          <section>
+            <p className="mono text-[11px] uppercase tracking-[0.2em] text-[var(--ink-muted)] mb-8 flex items-center gap-3">
+              <span className="inline-block h-[1px] w-8 bg-[var(--line-strong)]" />
+              Fiche technique
+            </p>
+            <div className="grid gap-0 lg:grid-cols-2 border-t border-l border-[var(--line)]">
+              {hasInfos && (
+                <div className="border-r border-b border-[var(--line)] p-6">
+                  <h3 className="mono text-[11px] uppercase tracking-[0.2em] text-[var(--ink-muted)] mb-5">
+                    Release info
+                  </h3>
+                  <dl className="space-y-3 text-[14px]">
+                    <Info k="Nom" v={detail?.release_name} />
+                    <Info k="Taille" v={detail?.release_size} />
+                    <Info k="Dev" v={detail?.developer} />
+                    <Info k="Éditeur" v={detail?.publisher} />
+                    <Info k="Sortie" v={detail?.release_date} />
+                    <Info k="Genre" v={detail?.genre} />
+                    <Info k="Reviews" v={detail?.reviews} />
+                  </dl>
+                </div>
+              )}
+              {detail?.system_requirements && (
+                <div className="border-r border-b border-[var(--line)] p-6">
+                  <h3 className="mono text-[11px] uppercase tracking-[0.2em] text-[var(--ink-muted)] mb-5">
+                    Config requise
+                  </h3>
+                  <pre className="whitespace-pre-wrap text-[13px] leading-relaxed text-[var(--ink-dim)] mono">
+                    {detail.system_requirements}
+                  </pre>
+                </div>
+              )}
             </div>
           </section>
         )}
 
+        {/* SCREENSHOTS */}
         {detail?.screenshots && detail.screenshots.length > 0 && (
-          <section className={`${ui.card} p-5`}>
-            <h3 className="text-xl font-bold text-white">Screenshots</h3>
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <section>
+            <p className="mono text-[11px] uppercase tracking-[0.2em] text-[var(--ink-muted)] mb-8 flex items-center gap-3">
+              <span className="inline-block h-[1px] w-8 bg-[var(--line-strong)]" />
+              Screenshots · {detail.screenshots.length}
+            </p>
+            <div className="grid gap-4 md:grid-cols-2">
               {detail.screenshots.map((src: string) => (
                 <img
                   key={src}
                   src={src}
                   alt={detail?.title ?? latest.title}
-                  className="w-full border border-[#334155] object-cover"
+                  className="w-full border border-[var(--line)] object-cover"
                 />
               ))}
             </div>
           </section>
         )}
 
+        {/* TRAILER */}
         {detail?.trailer_url && (
-          <section className={`${ui.card} p-5`}>
-            <h3 className="text-xl font-bold text-white">Trailer</h3>
-            <video controls className="mt-4 w-full" src={detail.trailer_url} />
+          <section>
+            <p className="mono text-[11px] uppercase tracking-[0.2em] text-[var(--ink-muted)] mb-8 flex items-center gap-3">
+              <span className="inline-block h-[1px] w-8 bg-[var(--line-strong)]" />
+              Trailer
+            </p>
+            <video controls className="w-full border border-[var(--line)]" src={detail.trailer_url} />
           </section>
         )}
 
+        {/* DOWNLOADS */}
         {detail?.download_links && detail.download_links.length > 0 && (
-          <section className={`${ui.card} p-5`}>
-            <h3 className="text-xl font-bold text-white">Liens de téléchargement</h3>
-            <p className="mt-1 text-sm text-[#8b98a5]">
-              {detail.download_links.length} lien{detail.download_links.length > 1 ? 's' : ''} disponible{detail.download_links.length > 1 ? 's' : ''}
-            </p>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <section>
+            <div className="flex items-center justify-between mb-8">
+              <p className="mono text-[11px] uppercase tracking-[0.2em] text-[var(--ink-muted)] flex items-center gap-3">
+                <span className="inline-block h-[1px] w-8 bg-[var(--line-strong)]" />
+                Liens · {detail.download_links.length}
+              </p>
+            </div>
+            <div className="grid gap-0 sm:grid-cols-2 lg:grid-cols-3 border-t border-l border-[var(--line)]">
               {detail.download_links.map((link, index) => (
                 <a
                   key={index}
                   href={link.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex flex-col gap-2 rounded-xl border border-[#2563eb] bg-[#1e293b] p-4 transition hover:border-[#2563eb] hover:bg-[#2563eb]"
+                  className="group border-b border-r border-[var(--line)] p-5 hover:bg-[var(--bg-elev)] transition-colors"
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2563eb]/20 text-[#2563eb]">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <polyline points="7 10 12 15 17 10" />
-                        <line x1="12" y1="15" x2="12" y2="3" />
-                      </svg>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="mono text-[10px] uppercase tracking-[0.18em] text-[var(--brand-hi)]">
+                      {link.host || 'download'}
                     </span>
-                    <span className="text-xs font-semibold uppercase tracking-wider text-[#2563eb]">
-                      {link.host || 'Download'}
+                    <span className="text-[var(--ink-muted)] group-hover:text-[var(--brand-hi)] transition-colors">
+                      ↗
                     </span>
                   </div>
-                  <span className="text-sm text-white line-clamp-2">
+                  <span className="block text-[14px] text-[var(--ink)] line-clamp-2">
                     {link.text}
                   </span>
                 </a>
@@ -192,35 +240,62 @@ export default async function GamePage({ params }: Props) {
           </section>
         )}
 
-        {data.map((item) => (
-          <article key={item.id} className={`${ui.card} p-5`}>
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-[#8b98a5]">
-                  {item.source}
-                </p>
-                <h3 className="mt-2 text-xl font-bold text-white">{item.title}</h3>
-                <p className="mt-3 text-sm leading-7 text-[#c7d5e0]">
-                  {item.summary || 'Aucun résumé disponible.'}
-                </p>
-
-                <a
-                  href={item.article_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-4 inline-block text-sm font-semibold text-[#2563eb]"
-                >
-                  Ouvrir la source →
-                </a>
-              </div>
-
-              <div className="text-sm text-[#8b98a5]">
-                {formatDate(item.published_at)}
-              </div>
-            </div>
-          </article>
-        ))}
+        {/* HISTORY */}
+        <section>
+          <div className="flex items-center justify-between mb-8">
+            <p className="mono text-[11px] uppercase tracking-[0.2em] text-[var(--ink-muted)] flex items-center gap-3">
+              <span className="inline-block h-[1px] w-8 bg-[var(--line-strong)]" />
+              Historique · {data.length}
+            </p>
+          </div>
+          <ol className="relative border-l border-[var(--line)] ml-2 space-y-0">
+            {data.map((item, idx) => (
+              <li key={item.id} className="relative pl-8 pb-8 last:pb-0">
+                <span className="absolute left-0 top-1.5 -translate-x-1/2 h-2 w-2 rounded-full bg-[var(--brand)] ring-4 ring-[var(--bg)]" />
+                <div className="flex flex-col md:flex-row md:items-baseline md:justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="mono text-[11px] uppercase tracking-[0.18em] text-[var(--ink-muted)] mb-1">
+                      {idx === 0 ? 'Dernière · ' : ''}{item.source}
+                    </p>
+                    <h3 className="text-[17px] font-medium tracking-[-0.01em] text-[var(--ink)]">
+                      {item.title}
+                    </h3>
+                    {item.summary ? (
+                      <p className="mt-2 text-[14px] leading-relaxed text-[var(--ink-dim)] max-w-2xl">
+                        {item.summary}
+                      </p>
+                    ) : null}
+                    <a
+                      href={item.article_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-3 inline-flex items-center gap-1.5 text-[12px] text-[var(--brand-hi)] hover:text-[var(--ink)] border-b border-transparent hover:border-[var(--ink)] transition-colors pb-0.5"
+                    >
+                      Voir la source ↗
+                    </a>
+                  </div>
+                  <p className="mono text-[11px] text-[var(--ink-muted)] shrink-0">
+                    {formatDate(item.published_at)}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
       </div>
     </AppShell>
+  );
+}
+
+function Info({ k, v }: { k: string; v?: string | null }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 border-b border-[var(--line)] pb-2 last:border-b-0">
+      <dt className="mono text-[11px] uppercase tracking-[0.15em] text-[var(--ink-muted)]">
+        {k}
+      </dt>
+      <dd className="text-[14px] text-[var(--ink-dim)] text-right truncate">
+        {v || '—'}
+      </dd>
+    </div>
   );
 }

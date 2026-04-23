@@ -13,31 +13,63 @@ type GameUpdate = {
   published_at?: string | null;
 };
 
+export const revalidate = 120;
+
 export default async function UpdatesPage() {
   const { data, error } = await supabase
     .from('game_updates')
     .select('*')
     .order('published_at', { ascending: false })
-    .limit(80);
+    .limit(120);
 
   if (error) {
     return (
       <AppShell
-        title="Toutes les mises a jour"
-        subtitle="Impossible de charger les donnees"
+        kicker="Dépêches"
+        title="Toutes les mises à jour"
+        subtitle="Impossible de charger les données pour le moment."
       >
-        <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-5 text-red-200">
-          {error.message}
+        <div className="border border-[var(--bad)]/30 bg-[var(--bad)]/5 p-5 text-[var(--bad)] mono text-sm">
+          ✕ {error.message}
         </div>
       </AppShell>
     );
   }
 
   const updates = (data ?? []) as GameUpdate[];
+  const latest = updates[0]?.published_at
+    ? new Date(updates[0].published_at).toLocaleString('fr-FR', {
+        day: '2-digit',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : '—';
 
   return (
-    <AppShell title="Toutes les mises à jour" subtitle="Dernières actualités de jeux">
+    <AppShell
+      kicker="Dépêches · 01"
+      title="Toutes les mises à jour"
+      subtitle="Filtre, cherche, marque comme lu, ajoute à ta watchlist. Rien ne se perd."
+      eyebrow={
+        <div className="flex items-center gap-6 md:border-l md:border-[var(--line)] md:pl-8">
+          <Metric label="Total" value={updates.length.toString().padStart(3, '0')} />
+          <Metric label="Dernière" value={latest} mono={false} />
+        </div>
+      }
+    >
       <UpdatesDashboard updates={updates} />
     </AppShell>
+  );
+}
+
+function Metric({ label, value, mono = true }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div>
+      <p className="mono text-[10px] uppercase tracking-[0.2em] text-[var(--ink-muted)] mb-1.5">
+        {label}
+      </p>
+      <p className={`${mono ? 'mono' : ''} text-lg text-[var(--ink)]`}>{value}</p>
+    </div>
   );
 }

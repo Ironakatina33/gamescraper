@@ -17,18 +17,18 @@ interface ToastProps {
   onRemove: (id: string) => void;
 }
 
-const toastStyles: Record<ToastType, string> = {
-  success: 'bg-green-500/20 border-green-500/30 text-green-200',
-  error: 'bg-red-500/20 border-red-500/30 text-red-200',
-  info: 'bg-[#2563eb]/20 border-[#2563eb]/30 text-[#93c5fd]',
-  warning: 'bg-yellow-500/20 border-yellow-500/30 text-yellow-200',
+const toastAccent: Record<ToastType, string> = {
+  success: 'bg-[var(--good)]',
+  error: 'bg-[var(--bad)]',
+  info: 'bg-[var(--brand)]',
+  warning: 'bg-[var(--warn)]',
 };
 
 const toastIcons: Record<ToastType, string> = {
   success: '✓',
   error: '✕',
-  info: 'ℹ',
-  warning: '⚠',
+  info: 'i',
+  warning: '!',
 };
 
 function ToastItem({ toast, onRemove }: ToastProps) {
@@ -51,23 +51,28 @@ function ToastItem({ toast, onRemove }: ToastProps) {
   return (
     <div
       className={cx(
-        'pointer-events-auto flex items-center gap-3 rounded-lg border px-4 py-3 shadow-lg backdrop-blur transition-all duration-300',
-        toastStyles[toast.type],
-        isExiting ? 'translate-x-full opacity-0' : 'translate-x-0 opacity-100'
+        'pointer-events-auto flex items-stretch gap-0 border border-[var(--line-strong)] bg-[var(--bg-card)] shadow-2xl transition-all duration-300 overflow-hidden',
+        isExiting ? 'translate-x-[110%] opacity-0' : 'translate-x-0 opacity-100'
       )}
       role="alert"
     >
-      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-sm font-bold">
-        {toastIcons[toast.type]}
-      </span>
-      <span className="flex-1 text-sm font-medium">{toast.message}</span>
-      <button
-        onClick={handleClose}
-        className="flex h-6 w-6 items-center justify-center rounded-full hover:bg-white/10 transition"
-        aria-label="Fermer"
-      >
-        ×
-      </button>
+      <div className={cx('w-1 shrink-0', toastAccent[toast.type])} />
+      <div className="flex items-center gap-3 px-4 py-3 flex-1">
+        <span className={cx(
+          'mono inline-flex h-5 w-5 items-center justify-center text-[11px] text-white',
+          toastAccent[toast.type]
+        )}>
+          {toastIcons[toast.type]}
+        </span>
+        <span className="flex-1 text-[13px] text-[var(--ink)]">{toast.message}</span>
+        <button
+          onClick={handleClose}
+          className="text-[var(--ink-muted)] hover:text-[var(--ink)] transition-colors text-lg leading-none"
+          aria-label="Fermer"
+        >
+          ×
+        </button>
+      </div>
     </div>
   );
 }
@@ -81,7 +86,7 @@ export function ToastContainer({ toasts, onRemove }: ToastContainerProps) {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full">
+    <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-[360px] w-full">
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onRemove={onRemove} />
       ))}
