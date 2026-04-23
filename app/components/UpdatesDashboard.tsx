@@ -18,6 +18,34 @@ type GameUpdate = {
   published_at?: string | null;
 };
 
+type GameType = {
+  value: string;
+  label: string;
+  keywords: string[];
+};
+
+const GAME_TYPES: GameType[] = [
+  { value: 'all', label: 'Tous', keywords: [] },
+  { value: 'multi', label: 'Multi', keywords: ['multi', 'multiplayer', 'co-op', 'coop', 'pvp', 'online'] },
+  { value: 'solo', label: 'Solo', keywords: ['single', 'solo', 'offline'] },
+  { value: 'aventure', label: 'Aventure', keywords: ['adventure', 'aventure', 'exploration', 'open world', 'sandbox'] },
+  { value: 'horror', label: 'Horror', keywords: ['horror', 'horreur', 'scary', 'survival horror', 'terror'] },
+  { value: 'rpg', label: 'RPG', keywords: ['rpg', 'roleplay', 'role playing'] },
+  { value: 'fps', label: 'FPS', keywords: ['fps', 'shooter', 'first person'] },
+  { value: 'strategie', label: 'Stratégie', keywords: ['strategy', 'strategie', 'rts', 'turn-based', 'tactical'] },
+  { value: 'sport', label: 'Sport', keywords: ['sport', 'racing', 'football', 'soccer', 'basketball', 'fifa'] },
+];
+
+function getGameType(title: string, summary?: string | null): string {
+  const text = (title + ' ' + (summary ?? '')).toLowerCase();
+  for (const type of GAME_TYPES.slice(1)) { // skip 'all'
+    if (type.keywords.some(kw => text.includes(kw.toLowerCase()))) {
+      return type.value;
+    }
+  }
+  return 'all';
+}
+
 type UpdatesDashboardProps = {
   updates: GameUpdate[];
   onRefresh?: () => void;
@@ -68,6 +96,7 @@ export default function UpdatesDashboard({ updates, onRefresh }: UpdatesDashboar
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [sortMode, setSortMode] = useState<'recent' | 'popular' | 'alpha'>('recent');
+  const [selectedType, setSelectedType] = useState<string>('all');
   const [viewCounts, setViewCounts] = useState<Record<string, number>>({});
   const itemsPerPage = 10;
 
@@ -86,7 +115,7 @@ export default function UpdatesDashboard({ updates, onRefresh }: UpdatesDashboar
   }, [sortMode, viewCounts]);
 
   // Ref to track filter changes for page reset
-  const filterKey = useMemo(() => `${search}-${selectedSource}-${watchlistOnly}-${sortMode}`, [search, selectedSource, watchlistOnly, sortMode]);
+  const filterKey = useMemo(() => `${search}-${selectedSource}-${watchlistOnly}-${sortMode}-${selectedType}`, [search, selectedSource, watchlistOnly, sortMode, selectedType]);
   const prevFilterKey = useRef(filterKey);
 
   useEffect(() => {
@@ -162,7 +191,9 @@ export default function UpdatesDashboard({ updates, onRefresh }: UpdatesDashboar
 
       const matchesWatchlist = !watchlistOnly || item.isFollowed;
 
-      return matchesSearch && matchesSource && matchesWatchlist;
+      const matchesType = selectedType === 'all' || getGameType(item.title, item.summary) === selectedType;
+
+      return matchesSearch && matchesSource && matchesWatchlist && matchesType;
     });
 
     if (sortMode === 'popular') {
@@ -173,7 +204,7 @@ export default function UpdatesDashboard({ updates, onRefresh }: UpdatesDashboar
     // 'recent' is the default order from the query
 
     return filtered;
-  }, [withStatus, search, selectedSource, watchlistOnly, sortMode, viewCounts]);
+  }, [withStatus, search, selectedSource, watchlistOnly, sortMode, selectedType, viewCounts]);
 
   // Pagination
   const totalPages = Math.ceil(filteredUpdates.length / itemsPerPage);
@@ -285,6 +316,22 @@ export default function UpdatesDashboard({ updates, onRefresh }: UpdatesDashboar
               <option value="all">Toutes</option>
               {sources.map((source) => (
                 <option key={source} value={source}>{source}</option>
+              ))}
+            </select>
+            <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[var(--ink-muted)]">↓</span>
+          </div>
+        </div>
+
+        <div>
+          <p className={ui.sectionTitle}>Type</p>
+          <div className="mt-3 relative">
+            <select
+              value={selectedType}
+              onChange={(e) => setSelectedType(e.target.value)}
+              className={`${ui.select} pr-10`}
+            >
+              {GAME_TYPES.map((type) => (
+                <option key={type.value} value={type.value}>{type.label}</option>
               ))}
             </select>
             <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[var(--ink-muted)]">↓</span>
