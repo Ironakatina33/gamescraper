@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { cx, ui } from '../../lib/ui';
-import AppShell from './AppShell';
 import { useToast } from './ToastContext';
 import { Pagination } from './Pagination';
 import { useAutoRefresh, AutoRefreshToggle } from './AutoRefresh';
@@ -200,10 +199,7 @@ export default function UpdatesDashboard({ updates, onRefresh }: UpdatesDashboar
   }
 
   return (
-    <AppShell
-      title="Toutes les mises à jour"
-      subtitle="Cherche un jeu, ouvre sa page, ou ajoute-le à ta watchlist"
-    >
+    <>
       <div className="mb-5 grid gap-3 sm:grid-cols-3">
         <div className={`${ui.card} p-4`}>
           <p className="text-xs uppercase tracking-[0.2em] text-[#94a3b8]">Updates</p>
@@ -398,6 +394,6 @@ export default function UpdatesDashboard({ updates, onRefresh }: UpdatesDashboar
           )}
         </section>
       </div>
-    </AppShell>
+    </>
   );
 }
